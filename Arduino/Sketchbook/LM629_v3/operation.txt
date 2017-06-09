@@ -1,0 +1,76 @@
+
+Normal operation:
+
+
+*** Motion Controller 12.17x 2010may14  TL Fong ***
+*** Program start ***
+After hardware system reset, status byte = C4
+After software system reset (RESET), status byte = C4
+After software interrupt reset (RSTI), status byte = C0
+before initialization, status byte = C0
+After initialization, status byte = C0
+After loading filter, status byte = C0
+After loading trajectory, status byte = 44
+Checking signals register
+  Signals Register High Byte =   44
+  Signals Register Low Byte =   44
+After reading signal register high byte, status byte = 44
+After simple move 01, status byte = 40
+*** Program stop ***
+
+=====================================================================
+
+*** Program start ***
+After hardware system reset, Chip 1: 0 -> C4    Chip 2: 0 -> C4
+Chip 1  After software interrupt reset (RSTI command)   Status Byte: C0
+Chip 2  After software interrupt reset (RSTI command)   Status Byte: C0
+Chip 1  After loading filter,    Status Byte: C0
+Chip 1  signals register:   High Byte=1   Low Byte=11000000   Status Byte: C0
+acc: 2000
+vel: 700000
+pos: -100000
+Chip 1  After moveAccelerationVelocityPosition,    Status Byte: 40
+Chip 2  After loading filter,    Status Byte: C0
+Chip 2  signals register:   High Byte=1   Low Byte=11000000   Status Byte: C0
+Chip 2  After moveAccelerationVelocityPosition,    Status Byte: 40
+Chip 1 real Pos: -1861 of -6030   Velocity: -5 of -700000   Integration Sum: -4000   Chip 1  signals register:   High Byte=1   Low Byte=1000000   Status Byte: 40
+Chip 2 real Pos: -15 of -2000   Velocity: 0 of 0   Integration Sum: -2000   Chip 2  signals register:   High Byte=10000101   Low Byte=1000100   Status Byte: 44
+Chip 1 real Pos: -24208 of -54298   Velocity: -5 of -700000   Integration Sum: -4000   Chip 1  signals register:   High Byte=1   Low Byte=1000000   Status Byte: 40
+Chip 2 real Pos: -224 of -2000   Velocity: 0 of 0   Integration Sum: -2000   Chip 2  signals register:   High Byte=10000101   Low Byte=1000100   Status Byte: 44
+Chip 1 real Pos: -46081 of -99997   Velocity: -4 of -14000   Integration Sum: -4000   Chip 1  signals register:   High Byte=10000101   Low Byte=1000100   Status Byte: 44
+Chip 2 real Pos: -434 of -2000   Velocity: 0 of 0   Integration Sum: -2000   Chip 2  signals register:   High Byte=10000101   Low Byte=1000100   Status Byte: 44
+Chip 1 real Pos: -67984 of -100000   Velocity: -5 of 0   Integration Sum: -4000   Chip 1  signals register:   High Byte=10000101   Low Byte=1000100   Status Byte: 44
+Chip 2 real Pos: -642 of -2000   Velocity: 0 of 0   Integration Sum: -2000   Chip 2  signals register:   High Byte=10000101   Low Byte=1000100   Status Byte: 44
+Chip 1 real Pos: -89792 of -100000   Velocity: -5 of 0   Integration Sum: -4039   Chip 1  signals register:   High Byte=10000101   Low Byte=1000100   Status Byte: 44
+Chip 2 real Pos: -838 of -2000   Velocity: 0 of 0   Integration Sum: -2000   Chip 2  signals register:   High Byte=10000101   Low Byte=1000100   Status Byte: 44
+Chip 1 real Pos: -100457 of -100000   Velocity: 0 of 0   Integration Sum: 159   Chip 1  signals register:   High Byte=10000101   Low Byte=1000100   Status Byte: 44
+Chip 2 real Pos: -1006 of -2000   Velocity: 0 of 0   Integration Sum: -2000   Chip 2  signals register:   High Byte=10000101   Low Byte=1000100   Status Byte: 44
+Chip 1 real Pos: -99952 of -100000   Velocity: 0 of 0   Integration Sum: 1824   Chip 1  signals register:   High Byte=10000101   Low Byte=1000100   Status Byte: 44
+Chip 2 real Pos: -1150 of -2000   Velocity: 0 of 0   Integration Sum: -2000   Chip 2  signals register:   High Byte=10000101   Low Byte=1000100   Status Byte: 44
+Chip 1 real Pos: -99952 of -100000   Velocity: 0 of 0   Integration Sum: 991   Chip 1  signals register:   High Byte=10000101   Low Byte=1000100   Status Byte: 44
+Chip 2 real Pos: -1272 of -2000   Velocity: 0 of 0   Integration Sum: -2000   Chip 2  signals register:   High Byte=10000101   Low Byte=1000100   Status Byte: 44
+Chip 1 real Pos: -99952 of -100000   Velocity: 0 of 0   Integration Sum: 158   Chip 1  signals register:   High Byte=10000101   Low Byte=1000100   Status Byte: 44
+Chip 2 real Pos: -1377 of -2000   Velocity: 0 of 0   Integration Sum: -2000   Chip 2  signals register:   High Byte=10000101   Low Byte=1000100   Status Byte: 44
+
+Normal operation:
+
+
+*** Motion Controller 12.17x 2010may14  TL Fong ***
+*** Program start ***
+After hardware system reset, status byte = C4
+After software system reset (RESET), status byte = C4
+After software interrupt reset (RSTI), status byte = C0
+before initialization, status byte = C0
+After initialization, status byte = C0
+After loading filter, status byte = C0
+After loading trajectory, status byte = 44
+Checking signals register
+  Signals Register High Byte =   44
+  Signals Register Low Byte =   44
+After reading signal register high byte, status byte = 44
+After simple move 01, status byte = 40
+*** Program stop ***
+
+
+
+

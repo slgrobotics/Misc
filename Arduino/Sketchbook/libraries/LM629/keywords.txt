@@ -1,0 +1,46 @@
+#######################################
+# Syntax Coloring Map LM629
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+LM629		KEYWORD1
+LM629PID	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+init	KEYWORD2
+readStatusByte	KEYWORD2
+writeCommandByte	KEYWORD2
+writeTwoDataBytes	KEYWORD2
+writeShortData	KEYWORD2
+writeLongData	KEYWORD2
+readShortData	KEYWORD2
+readLongData	KEYWORD2
+softwareInterruptReset	KEYWORD2
+softwareSystemReset	KEYWORD2
+readSignalsRegister	KEYWORD2
+readRealPosition	KEYWORD2
+readDesiredPosition	KEYWORD2
+readRealVelocity	KEYWORD2
+readDesiredVelocity	KEYWORD2
+readIntegrationSum	KEYWORD2
+waitNotBusy	KEYWORD2
+
+stopMotor	KEYWORD2
+loadFilter	KEYWORD2
+loadAcceleration	KEYWORD2
+moveAccelerationVelocity	KEYWORD2
+moveAccelerationVelocityPositionAbsolute	KEYWORD2
+moveAccelerationVelocityPositionRelative	KEYWORD2
+moveVelocity	KEYWORD2
+moveVelocityPositionAbsolute	KEYWORD2
+moveVelocityPositionRelative	KEYWORD2
+checkPoint	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
