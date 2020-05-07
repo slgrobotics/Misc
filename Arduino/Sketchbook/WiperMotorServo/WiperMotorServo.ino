@@ -6,7 +6,8 @@
 #include <PID_v1.h>
 
 // 10 KOhm potentiometer:
-const int analogInPin = A0;  // Analog input pin that the potentiometer is attached to
+const int analogInPin = A1;  // Analog input pin that the potentiometer is attached to
+const int switchInPin = A2;  // switching between the RC input and potentiometer
 
 // for PID see https://github.com/br3ttb/Arduino-PID-Library  and  http://brettbeauregard.com/blog/2011/04/improving-the-beginners-pid-introduction/
 
@@ -28,6 +29,9 @@ Metro traceMetro = Metro(100);
 
 void setup()
 {
+  pinMode(analogInPin, INPUT);
+  pinMode(switchInPin, INPUT_PULLUP);
+  
   setupRotationSensor();
 
   setupMotor();
@@ -66,13 +70,9 @@ double multiplier;
 
 void loop()
 {
-  //
-  // the way it works that when you boot up with RC receiver signal off - the POT will be in control.
-  // once RC signal is detected, the RC will be in control, even after its signal disappears (last position will be held).
-  //
-  
   if (RC_avail())
   {
+    // we process RC signal independently of the switch position.
     // just a bit of EMA smoothing to eliminate RC signal rounding errors and imprecision:
     rcpwmEma = (valuePrev < -1000000.0) ? rcpwm : ((rcpwm - valuePrev) * multiplier + valuePrev);  // ema
     valuePrev = rcpwmEma;
@@ -81,36 +81,37 @@ void loop()
 
   if (mainMetro.check() == 1)
   {
-    feedbackPosValue = readRotationSensor() - 900; // avoiding transition from 0 to 360
+    boolean doRcControl = digitalRead(switchInPin); // TRUE if switch is in "RC" position
 
     if (RC_availFlag)
     {
-      //RC_availFlag = false;
-      if (rcpwmEma >= 900 && rcpwmEma <= 2000)
+      RC_availFlag = false;
+      if (doRcControl && rcpwmEma >= 800 && rcpwmEma <= 2200)
       {
+        // switch is in "RC" position, and signal is within the range.
+        // set the Setpoint value for PID:
         Setpoint = map(rcpwmEma, 900, 2000, 0, 1800);  // RC value to tenths of degrees
       }
     }
-    else
+
+    if(!doRcControl)
     {
-      // read the feedback pot analog value:
-      potValue = analogRead(analogInPin);   // value read from the pot
+      // switch is in "Pot" position.
+      // read the control potentiometer analog value:
+      potValue = analogRead(analogInPin);
 
       // pot value is in the range 0 to 1023
-      // the lower half of it we use for reverse rotation; the upper half for forward rotation:
-      //pwr = map(potValue, 0, 1023, -255, 255);
-
-      Setpoint = map(potValue, 0, 1023, 0, 1800);  // ADC value to tenths of degrees
+      // set the Setpoint value for PID:
+      Setpoint = map(potValue, 0, 1023, 0, 1800);  // pot value to tenths of degrees
     }
 
-    //mappedFeedback = map(feedbackPosValue, 0, 180, 0, 180);    // map(value, fromLow, fromHigh, toLow, toHigh)
-
-    //Measured = mappedFeedback;
+    feedbackPosValue = readRotationSensor() - 900; // avoiding transition from 0 to 360
+    // set the Measured value for PID:
     Measured = feedbackPosValue;  // already tenths of degrees
 
     myPID.Compute();
 
-    pwr = (int)MotorPower;
+    pwr = (int)MotorPower;  // that's what PID computed
 
     pwm = setMotorPower(pwr);
   }
