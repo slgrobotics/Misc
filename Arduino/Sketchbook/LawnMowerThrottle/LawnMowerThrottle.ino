@@ -5,18 +5,13 @@
 
 #include <PID_v1.h>
 
-// actual low and high throttle arm positions for RIGHT servo:
-//#define ROT_SENSOR_LOW_LIMIT    -20
-//#define ROT_SENSOR_HIGH_LIMIT   2100
-//const boolean doReverseRc = true;
-
-// actual low and high throttle arm positions for LEFT servo:
-#define ROT_SENSOR_LOW_LIMIT    -20
-#define ROT_SENSOR_HIGH_LIMIT   2100
+// actual low and high throttle arm positions:
+#define ROT_SENSOR_LOW_LIMIT    450
+#define ROT_SENSOR_HIGH_LIMIT   1650
 const boolean doReverseRc = false;
 
 // for different motors deadzone can be adjusted here:
-#define DEADZONE 30
+#define DEADZONE 100
 
 // 10 KOhm potentiometer:
 const int analogInPin = A1;  // Analog input pin that the potentiometer is attached to
@@ -29,11 +24,13 @@ double Setpoint, Measured;  // all in tenths of degrees, so 90 degrees becomes 9
 double MotorPower;          // in PWM, -255...255
 
 // Specify the links and initial tuning parameters:
+
 //PID myPID(&Measured, &MotorPower, &Setpoint, 0.3, 0.1, 0.001, REVERSE);       // double Kp, Ki, Kd, DIRECT or REVERSE
 
-//PID myPID(&Measured, &MotorPower, &Setpoint, 0.3, 0.4, 0.005, REVERSE);       // double Kp, Ki, Kd, DIRECT or REVERSE
+//PID myPID(&Measured, &MotorPower, &Setpoint, 0.3, 0.01, 0.001, DIRECT);       // double Kp, Ki, Kd, DIRECT or REVERSE
 
 PID myPID(&Measured, &MotorPower, &Setpoint, 0.3, 0.0, 0.005, REVERSE);       // double Kp, Ki, Kd, DIRECT or REVERSE
+
 
 #define SAMPLE_TIME 10
 
@@ -63,7 +60,7 @@ void setup()
 
   // to make things simpler, we operate actuator using Servo-like microsecond scale, 800 to 2200
 
-  Setpoint = (ROT_SENSOR_LOW_LIMIT + ROT_SENSOR_HIGH_LIMIT) / 2;    // tenths of degrees
+  Setpoint = ROT_SENSOR_LOW_LIMIT;    // tenths of degrees
 
   setEmaPeriod(10);
 
@@ -148,10 +145,10 @@ void loop()
 
       // pot value is in the range 0 to 1023
       // set the Setpoint value for PID:
-      Setpoint = map(potValue, 0, 1023, ROT_SENSOR_LOW_LIMIT, ROT_SENSOR_HIGH_LIMIT);  // pot value to tenths of degrees
+      Setpoint = map(potValue, 1023, 0, ROT_SENSOR_LOW_LIMIT, ROT_SENSOR_HIGH_LIMIT);  // pot value to tenths of degrees
     }
 
-    feedbackPosValue = readRotationSensor() - 900; // avoiding transition from 0 to 360
+    feedbackPosValue = readRotationSensor(); // no need here // - 900; // avoiding transition from 0 to 360
     // set the Measured value for PID:
     Measured = feedbackPosValue;  // already tenths of degrees
 
@@ -164,7 +161,7 @@ void loop()
       digitalWrite(LED_PIN, HIGH);
       enableMotor();
       pwm = setMotorPower(pwr);
-    }
+	}
     else
     {
       digitalWrite(LED_PIN, LOW);
