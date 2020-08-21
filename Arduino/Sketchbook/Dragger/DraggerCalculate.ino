@@ -1,0 +1,73 @@
+
+long distR;
+long distL;
+
+// speed control is based on measuring ticks per cycle (say, 100ms), scaling to 100% and feeding it to PID which has a setting of 0...100 also in %
+// for a drive configuration (particular robot) we need to measure ticks per cycle when on full power and wheels in the air.
+
+void speed_calculate()
+{
+  distR = Rdistance - RdistancePrev; // around 13 with 20Hz cycle, 65 with 10Hz cycle, full power and wheels in the air
+  distL = Ldistance - LdistancePrev;
+
+  speedMeasured_R = (double)map(distR, -65, 65, -100, 100);  // first pair is number of ticks at full speed, we map it to 100%
+  speedMeasured_L = (double)map(distL, -65, 65, -100, 100);
+
+  RdistancePrev = Rdistance;
+  LdistancePrev = Ldistance;
+}
+
+// **********************************************
+// Calculate the pwm, given the desired speed
+// **********************************************
+void pwm_calculate()
+{
+      // "desiredSpeed" comes in the range -100...100 - it has a meaning of "percent of max speed"
+
+      //dpwm_R = map(desiredSpeedR, -100, 100, -255, 255);
+      //dpwm_L = map(desiredSpeedL, -100, 100, -255, 255);
+
+      // pick up values computed by PIDs:
+      pwm_R += (int)dpwm_R;
+      pwm_L += (int)dpwm_L;
+
+      // we let set_motor() constrain pwm_L and pwm_R to -255...255
+}
+
+// ------------------------------------------------------------------------------------------------------
+
+// variables to compute exponential moving average:
+int emaPeriod[2];
+double valuePrev[2];
+double multiplier[2];
+
+void ema(int ch)
+{
+  // smooth movement by using ema:
+  switch (ch)
+  {
+    case RightMotorChannel:
+      setpointSpeedR = (valuePrev[ch] < -1000000.0) ? desiredSpeedR : ((desiredSpeedR - valuePrev[ch]) * multiplier[ch] + valuePrev[ch]);  // ema
+      //setpointSpeedR = desiredSpeedR; // no ema
+      valuePrev[ch] = setpointSpeedR;
+      break;
+
+    case LeftMotorChannel:
+      setpointSpeedL = (valuePrev[ch] < -1000000.0) ? desiredSpeedL : ((desiredSpeedL - valuePrev[ch]) * multiplier[ch] + valuePrev[ch]);  // ema
+      //setpointSpeedL = desiredSpeedL; // no ema
+      valuePrev[ch] = setpointSpeedL;
+      break;
+  }
+}
+
+void resetEma(int ch)
+{
+  valuePrev[ch] = -2000000.0;  // signal to use desiredSpeed directly for the first point
+}
+
+void setEmaPeriod(int ch, int period)
+{
+  resetEma(ch);
+  emaPeriod[ch] = period;
+  multiplier[ch] = 2.0 / (1.0 + (double)emaPeriod[ch]);
+}
