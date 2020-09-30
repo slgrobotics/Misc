@@ -52,11 +52,9 @@ void leftEncoder()
   {
     //digitalWrite(11, LOW);
     Ldistance--;
-    oLdistance--;
   } else {
     //digitalWrite(11, HIGH);
     Ldistance++;                // wheel moves forward, positive increase
-    oLdistance++;
   }
   //digitalWrite(10, LOW);
 }
@@ -74,11 +72,9 @@ void rightEncoder()
   {
     //digitalWrite(11, LOW);
     Rdistance++;                // wheel moves forward, positive increase
-    oRdistance++;
   } else {
     //digitalWrite(11, HIGH);
     Rdistance--;
-    oRdistance--;
   }
   //digitalWrite(10, LOW);
 }
