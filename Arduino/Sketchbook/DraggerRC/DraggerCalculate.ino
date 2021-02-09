@@ -7,14 +7,20 @@ long distL;
 
 void speed_calculate()
 {
-  distR = Rdistance; // - RdistancePrev; // around 13 with 20Hz cycle, 65 with 10Hz cycle, full power and wheels in the air
-  distL = Ldistance; // - LdistancePrev;
+  distR = Rdistance; // around 570 with 20Hz cycle, full power and wheels in the air
+  Rdistance = 0;     // same in EncodersReset()
+  distL = Ldistance;
+  Ldistance = 0;
+  
+  // we don't need to keep track of total distances per wheel, only increments - for speed loop.
+  // beware - if EncodersReset() is not called often enough, L/Rdistance will
+  // overflow at 32K and cause violent jerking of the wheels!
+  //EncodersReset();
 
-  speedMeasured_R = (double)map(distR, -65, 65, -100, 100);  // first pair is number of ticks at full speed, we map it to 100%
-  speedMeasured_L = (double)map(distL, -65, 65, -100, 100);
+  // note: this is the place to scale -100..100% speed to 255 pwm
 
-  //RdistancePrev = Rdistance;
-  //LdistancePrev = Ldistance;
+  speedMeasured_R = (double)map(distR, -570, 570, -100, 100);  // first pair is number of ticks at full speed, we map it to 100%
+  speedMeasured_L = (double)map(distL, -570, 570, -100, 100);
 }
 
 // **********************************************
@@ -22,16 +28,15 @@ void speed_calculate()
 // **********************************************
 void pwm_calculate()
 {
-      // "desiredSpeed" comes in the range -100...100 - it has a meaning of "percent of max speed"
+      // pick up values computed by PIDs. We must do it in float:
+      pwm_R += dpwm_R;
+      pwm_L += dpwm_L;
 
-      //dpwm_R = map(desiredSpeedR, -100, 100, -255, 255);
-      //dpwm_L = map(desiredSpeedL, -100, 100, -255, 255);
-
-      // pick up values computed by PIDs:
-      pwm_R += (int)dpwm_R;
-      pwm_L += (int)dpwm_L;
-
-      // we let set_motor() constrain pwm_L and pwm_R to -255...255
+      // do not allow float values to grow beyond motor maximums:
+      pwm_R = constrain(pwm_R, -255.0, 255.0);     // Maximum / Minimum Limitations
+      pwm_L = constrain(pwm_L, -255.0, 255.0);
+  
+      // we also let set_motor() constrain local integer ipwm_L and ipwm_R to -255...255
 }
 
 // ------------------------------------------------------------------------------------------------------

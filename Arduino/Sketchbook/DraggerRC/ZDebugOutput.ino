@@ -36,15 +36,25 @@ void printAll()
   Serial.print("       Left: ");
   Serial.println(setpointSpeedL);
 
-  Serial.print("Motors:   Right pwm_R: ");
-  Serial.print(pwm_R);
-  Serial.print("       Left pwm_L: ");
-  Serial.println(pwm_L);
-
   Serial.print("Encoders:  Right Rdistance: ");
   Serial.print(Rdur);
   Serial.print("       Left Ldistance: ");
   Serial.println(Ldur);
+
+  Serial.print("Measured speed %:   Right: ");
+  Serial.print(speedMeasured_R);
+  Serial.print("       Left: ");
+  Serial.println(speedMeasured_L);
+
+  Serial.print("PID:   Right dpwm_R: ");
+  Serial.print(dpwm_R);
+  Serial.print("       Left dpwm_L: ");
+  Serial.println(dpwm_L);
+
+  Serial.print("Motors:   Right pwm_R: ");
+  Serial.print(pwm_R);
+  Serial.print("       Left pwm_L: ");
+  Serial.println(pwm_L);
 }
 #endif
 

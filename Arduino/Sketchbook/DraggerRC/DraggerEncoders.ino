@@ -3,43 +3,41 @@
 // interrupts:
 // Most Arduino boards have two external interrupts: number 0 (on digital pin 2) and 1 (on digital pin 3)
 
-const int ENCODER_R_A = 3;    // side R (interrupt 0, Right encoder)
-const int ENCODER_R_B = 9;    // side R data
+const int ENCODER_L_A = 3;    // side L (interrupt 0, Left encoder)
+const int ENCODER_L_B = 9;    // side L data
 
-const int ENCODER_L_A = 2;    // side L (interrupt 1, Left encoder)
-const int ENCODER_L_B = 8;    // side L data
+const int ENCODER_R_A = 2;    // side R (interrupt 1, Right encoder)
+const int ENCODER_R_B = 8;    // side R data
 
 // **************************
 //     Init the Encoders
 // **************************
 void EncodersInit()
 {
-  // Right encoder:
-  pinModeFast(ENCODER_R_A, INPUT); 
-  pinModeFast(ENCODER_R_B, INPUT); 
-  
   // Left encoder:
   pinModeFast(ENCODER_L_A, INPUT); 
   pinModeFast(ENCODER_L_B, INPUT); 
 
+  // Right encoder:
+  pinModeFast(ENCODER_R_A, INPUT); 
+  pinModeFast(ENCODER_R_B, INPUT); 
+  
   EncodersReset();
 
-  attachInterrupt(0, leftEncoder, CHANGE);   // int 0, pin D2  - left encoder interrupt
-  attachInterrupt(1, rightEncoder, CHANGE);  // int 1, pin D3  - right encoder interrupt
+  attachInterrupt(1, leftEncoder, CHANGE);   // int 1, pin D3  - left encoder interrupt
+  attachInterrupt(0, rightEncoder, CHANGE);  // int 0, pin D2  - right encoder interrupt
 }
 
 void EncodersReset()
 {
-  Rdistance = 0;
   Ldistance = 0;
-  //RdistancePrev = 0;
-  //LdistancePrev = 0;
+  Rdistance = 0;
 }
 
 // ************************************
 //    Read distance from the encoders
 // ************************************
-void leftEncoder()
+void rightEncoder()
 {
   // we spend around 12.5us in the interrupt, at approx 1,5-2kHz frequency at pwm=80
   //digitalWrite(10, HIGH);
@@ -51,15 +49,15 @@ void leftEncoder()
   if(vi == vd)
   {
     //digitalWrite(11, LOW);
-    Ldistance--;
+    Rdistance--;
   } else {
     //digitalWrite(11, HIGH);
-    Ldistance++;                // wheel moves forward, positive increase
+    Rdistance++;                // wheel moves forward, positive increase
   }
   //digitalWrite(10, LOW);
 }
 
-void rightEncoder()
+void leftEncoder()
 {
   // we spend around 12.5us in the interrupt, at approx 1,5-2kHz frequency at pwm=80
   //digitalWrite(10, HIGH);
@@ -71,10 +69,10 @@ void rightEncoder()
   if(vi == vd)
   {
     //digitalWrite(11, LOW);
-    Rdistance++;                // wheel moves forward, positive increase
+    Ldistance++;                // wheel moves forward, positive increase
   } else {
     //digitalWrite(11, HIGH);
-    Rdistance--;
+    Ldistance--;
   }
   //digitalWrite(10, LOW);
 }

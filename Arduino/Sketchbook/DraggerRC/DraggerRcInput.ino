@@ -7,7 +7,7 @@
 #define PCINT_PIN_RIGHT 19
 
 // trim in case there's a timing discrepancy between RPi Hat and Arduino:
-#define PW_TRIM 0
+#define PW_TRIM 0 // 60
 
 #define PCINT_FUNCTION_LEFT rcPulseChange_LEFT
 #define PCINT_FUNCTION_RIGHT rcPulseChange_RIGHT
@@ -56,8 +56,12 @@ void rcPulseChange_LEFT()
   }
   else
   {
-    PW_LEFT = pciTime - lastRisingUs_LEFT + PW_TRIM; // calculate the duration of the current pulse
-    RC_data_rdy_LEFT = true;
+    int pw = pciTime - lastRisingUs_LEFT + PW_TRIM; // calculate the duration of the current pulse
+    if(800 < pw && pw < 2200)
+    {
+      PW_LEFT = pw;
+      RC_data_rdy_LEFT = true;
+    }
   }
 }
 
@@ -73,7 +77,11 @@ void rcPulseChange_RIGHT()
   }
   else
   {
-    PW_RIGHT = pciTime - lastRisingUs_RIGHT + PW_TRIM; // calculate the duration of the current pulse
-    RC_data_rdy_RIGHT = true;
+    int pw = pciTime - lastRisingUs_RIGHT + PW_TRIM; // calculate the duration of the current pulse
+    if(800 < pw && pw < 2200)
+    {
+      PW_RIGHT = pw;
+      RC_data_rdy_RIGHT = true;
+    }
   }
 }

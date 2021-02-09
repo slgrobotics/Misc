@@ -44,60 +44,65 @@ void set_motors()
 {
   int pwr; 
 
-  pwm_R = constrain(pwm_R, -255, 255);     // Maximum / Minimum Limitations
-  pwm_L = constrain(pwm_L, -255, 255);
+  int ipwm_R = (int)pwm_R;
+  int ipwm_L = (int)pwm_L;
+
+  ipwm_R = constrain(ipwm_R, -255, 255);     // Maximum / Minimum Limitations
+  ipwm_L = constrain(ipwm_L, -255, 255);
   
   // Set Right wheel's direction and speed
-  if(pwm_R == 0)
+  if(ipwm_R == 0)
   {
+    // park and brake:
     digitalWrite(RPWM_B, HIGH);
     digitalWrite(LPWM_B, HIGH);
   }
-  else if(pwm_R > 0)
+  else if(ipwm_R > 0)
   {
     if(DEADZONE > 0)
-      pwm_R = map(pwm_R, 1, 255, DEADZONE+1, 255);
+      ipwm_R = map(ipwm_R, 1, 255, DEADZONE+1, 255);
     
-    pwr = toMotorPower(pwm_R);
+    pwr = toMotorPower(ipwm_R);
     // Rotate forward: EN = 1, RPWM = PWM, LPWM = 1, DIS = vacant
     // Arduino generates 488Hz PWM propportional to analogWrite value:
     analogWrite( LPWM_B, (byte)(255 - pwr));  // 0 is max speed; 255 - min speed
     digitalWrite(RPWM_B, HIGH);
   }
-  else // pwm_R < 0
+  else // ipwm_R < 0
   {
     if(DEADZONE > 0)
-      pwm_R = map(pwm_R, -1, -255, -DEADZONE-1, -255);
+      ipwm_R = map(ipwm_R, -1, -255, -DEADZONE-1, -255);
     
-    pwr = toMotorPower(-pwm_R);
+    pwr = toMotorPower(-ipwm_R);
     // Rotate reverse: EN = 1, RPWM = 1, LPWM = PWM, DIS = vacant
     analogWrite( RPWM_B, (byte)(255 - pwr));
     digitalWrite(LPWM_B, HIGH);
   }
   
   // Set Left wheel's direction and speed:
-  if(pwm_L == 0)
+  if(ipwm_L == 0)
   {
+    // park and brake:
     digitalWrite(RPWM_A, HIGH);
     digitalWrite(LPWM_A, HIGH);
   }
-  else if(pwm_L > 0)
+  else if(ipwm_L > 0)
   {
     if(DEADZONE > 0)
-      pwm_L = map(pwm_L, 1, 255, DEADZONE+1, 255);
+      ipwm_L = map(ipwm_L, 1, 255, DEADZONE+1, 255);
     
-    pwr = toMotorPower(pwm_L);
+    pwr = toMotorPower(ipwm_L);
     // Rotate forward: EN = 1, RPWM = PWM, LPWM = 1, DIS = vacant
     // Arduino generates 488Hz PWM propportional to analogWrite value:
     analogWrite( RPWM_A, (byte)(255 - pwr));  // 0 is max speed; 255 - min speed
     digitalWrite(LPWM_A, HIGH);
   }
-  else // pwm_L < 0
+  else // ipwm_L < 0
   {
     if(DEADZONE > 0)
-      pwm_L = map(pwm_L, -1, -255, -DEADZONE-1, -255);
+      ipwm_L = map(ipwm_L, -1, -255, -DEADZONE-1, -255);
     
-    pwr = toMotorPower(-pwm_L);
+    pwr = toMotorPower(-ipwm_L);
     // Rotate reverse: EN = 1, RPWM = 1, LPWM = PWM, DIS = vacant
     analogWrite( LPWM_A, (byte)(255 - pwr));
     digitalWrite(RPWM_A, HIGH);

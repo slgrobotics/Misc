@@ -1,4 +1,5 @@
 //#define TRACE
+//#define USE_EMA
 
 #include <PID_v1.h>
 
@@ -38,11 +39,7 @@ double k1, k2, k3, k4;   // Adjustable Parameters - use as you wish
 
 volatile int Ldistance, Rdistance; // encoders - distance traveled, used by balance calculator for increments and zeroed often
 
-// we don't need to keep track of total distances per wheel, only increments - for speed loop:
-//long LdistancePrev = 0;   // last encoders values - distance traveled, in ticks
-//long RdistancePrev = 0;
-
-int pwm_R, pwm_L;       // pwm -255..255 sent to H-Bridge pins (will be constrained by set_motor()) 
+double pwm_R, pwm_L;    // pwm -255..255 accumulated here and ultimately sent to H-Bridge pins (will be constrained by set_motor()) 
 double dpwm_R, dpwm_L;  // correction output, calculated by PID, constrained -250..250 normally, will be added to the above
 
 double speedMeasured_R = 0;  // percent of max speed for this drive configuration.
@@ -68,8 +65,8 @@ const int LeftMotorChannel = 1;
 const int EmaPeriod = 20;
 
 // higher Ki causes residual rotation, higher Kd - jerking movement
-PID myPID_R(&speedMeasured_R, &dpwm_R, &setpointSpeedR, 0.2, 0.0, 0.02, DIRECT);    // in, out, setpoint, double Kp, Ki, Kd, DIRECT or REVERSE
-PID myPID_L(&speedMeasured_L, &dpwm_L, &setpointSpeedL, 0.2, 0.0, 0.02, DIRECT);
+PID myPID_R(&speedMeasured_R, &dpwm_R, &setpointSpeedR, 1.0, 0.0, 0.08, DIRECT);    // in, out, setpoint, double Kp, Ki, Kd, DIRECT or REVERSE
+PID myPID_L(&speedMeasured_L, &dpwm_L, &setpointSpeedL, 1.0, 0.0, 0.08, DIRECT);
 
 // milliseconds from last events:
 long lastComm = 0;
@@ -207,7 +204,8 @@ void loop()
   if(timer - timer_rc_avail > 1000000)
   {
     // failsafe - R/C signal is nit detected for more than a second
-    desiredSpeedR = desiredSpeedL = 0;
+    desiredSpeedR = desiredSpeedL = 0.0;
+    PW_RIGHT = PW_LEFT = 1500;
     digitalWriteFast(redLedPin, HIGH);
     digitalWriteFast(blueLedPin, LOW);
   }
@@ -215,10 +213,15 @@ void loop()
   // test - controller should hold this speed:
   //desiredSpeedR = 10;
   //desiredSpeedL = 10;
-    
+
+#ifdef USE_EMA
   // smooth movement by using ema: take desiredSpeed and produce setpointSpeed
   ema(RightMotorChannel);
   ema(LeftMotorChannel);
+#else // USE_EMA
+  setpointSpeedR = desiredSpeedR; // no ema
+  setpointSpeedL = desiredSpeedL;
+#endif // USE_EMA
 
   // compute control inputs - increments to current PWM
   myPID_R.Compute();
@@ -228,18 +231,13 @@ void loop()
   {  
     // based on PWM increments, calculate speed:
     speed_calculate();
-    // we don't need to keep track of total distances per wheel, only increments - for speed loop.
-    // beware - if EncodersReset() is not called often enough, L/Rdistance will
-    // overflow at 32K and cause violent jerking of the wheels!
-    EncodersReset();
-      
     // Calculate the pwm, given the desired speed (pick up values computed by PIDs):
     pwm_calculate();
   
     // test: At both motors set to +80 expect Ldistance and Rdistance to increase
-    //pwm_R = 80;
-    //pwm_L = 80;
-    //pwm_L = 255;  // measure full speed distR and distL. See SpeedControl tab.
+    //pwm_R = 80.0;
+    //pwm_L = 80.0;
+    //pwm_L = 255.0;  // measure full speed distR and distL. See SpeedControl tab.
   
     set_motors();
   
