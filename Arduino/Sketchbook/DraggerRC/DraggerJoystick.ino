@@ -1,6 +1,8 @@
 #define JOYSTICK_ACTIVATE_PIN 20
 #define JOYSTICK_PRESSED_PIN 21
 
+#define DEADZONE_JS 8.0
+
 boolean isControlByJoystick()
 {
   return !digitalReadFast(JOYSTICK_ACTIVATE_PIN);
@@ -13,12 +15,22 @@ boolean isJoystickPressed()
 
 double joystickX()
 {
-  return map((double)analogRead(AD0pin),0.0,1023.0,-100.0,100.0);
+  double jx = map((double)analogRead(AD0pin),0.0,1023.0,-100.0,100.0);
+  
+  if(abs(jx) < DEADZONE_JS) // deadzone
+    jx = 0.0;
+    
+   return jx;
 }
 
 double joystickY()
 {
-  return map((double)analogRead(AD1pin),27.0,1023.0,-100.0,95.0) + 5.0;
+  double jy = map((double)analogRead(AD1pin),27.0,1023.0,-100.0,95.0) + 5.0;
+  
+  if(abs(jy) < DEADZONE_JS) // deadzone
+    jy = 0.0;
+    
+   return jy;
 }
 
 // for percentage speed output, -100...100:
