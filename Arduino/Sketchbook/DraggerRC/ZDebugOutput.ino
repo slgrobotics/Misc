@@ -16,10 +16,10 @@ void printAll()
 
   Serial.println("--------------------");
 
-  Serial.print("K1=");
-  Serial.print(k1);
-  Serial.print("    K2=");
-  Serial.print(k2);
+//  Serial.print("K1=");
+//  Serial.print(k1);
+//  Serial.print("    K2=");
+//  Serial.print(k2);
   Serial.print("    K3=");
   Serial.print(k3);
   Serial.print("    K4=");
@@ -55,6 +55,19 @@ void printAll()
   Serial.print(pwm_R);
   Serial.print("       Left pwm_L: ");
   Serial.println(pwm_L);
+  
+  Serial.print("Joystick:   in control: ");
+  Serial.print(isControlByJoystick());
+  Serial.print("  pressed: ");
+  Serial.print(isJoystickPressed());
+  Serial.print(" X: ");
+  Serial.print(joystickX());
+  Serial.print(" Y: ");
+  Serial.print(joystickY());
+  Serial.print(" joystick speed L: ");
+  Serial.print(joystickSpeedL);
+  Serial.print(" speed R: ");
+  Serial.println(joystickSpeedR);
 }
 #endif
 

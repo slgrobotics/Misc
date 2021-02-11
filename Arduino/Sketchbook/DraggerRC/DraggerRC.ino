@@ -45,6 +45,11 @@ double dpwm_R, dpwm_L;  // correction output, calculated by PID, constrained -25
 double speedMeasured_R = 0;  // percent of max speed for this drive configuration.
 double speedMeasured_L = 0;
 
+// desired speed can be set joystick:
+// comes in the range -100...100 - it has a meaning of "percent of max speed":
+double joystickSpeedR = 0.0;
+double joystickSpeedL = 0.0;
+
 // desired speed is set by R/C
 // comes in the range -100...100 - it has a meaning of "percent of max speed":
 double desiredSpeedR = 0.0;
@@ -171,8 +176,8 @@ void loop()
     slowLoopCnt = 0;
 
     // multipliers are set to the experimental values, tuned to POTs in neutral position:
-    k1 = analogRead(AD0pin) * 1.0;
-    k2 = analogRead(AD1pin) * 1.0;
+    //k1 = analogRead(AD0pin) * 1.0;   now for joystick
+    //k2 = analogRead(AD1pin) * 1.0;
     k3 = analogRead(AD2pin) * 1.0;
     k4 = analogRead(AD3pin) * 1.0;
   }
@@ -203,7 +208,7 @@ void loop()
 
   if(timer - timer_rc_avail > 1000000)
   {
-    // failsafe - R/C signal is nit detected for more than a second
+    // failsafe - R/C signal is not detected for more than a second
     desiredSpeedR = desiredSpeedL = 0.0;
     PW_RIGHT = PW_LEFT = 1500;
     digitalWriteFast(redLedPin, HIGH);
@@ -213,6 +218,16 @@ void loop()
   // test - controller should hold this speed:
   //desiredSpeedR = 10;
   //desiredSpeedL = 10;
+
+  if(isControlByJoystick())
+  {
+    // ignore R/C values and override by joystick on A0 and A1:
+
+    computeJoystickSpeeds();
+    
+    desiredSpeedL = joystickSpeedL;
+    desiredSpeedR = joystickSpeedR;
+  }
 
 #ifdef USE_EMA
   // smooth movement by using ema: take desiredSpeed and produce setpointSpeed
