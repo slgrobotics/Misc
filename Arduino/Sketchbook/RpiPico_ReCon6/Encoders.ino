@@ -8,7 +8,7 @@ const int ENCODER_R_PIN = 7;    // side R (interrupt 1, Right encoder)
 // **************************
 //     Init the Encoders
 // **************************
-void EncodersInit()
+void encodersInit()
 {
   // Left encoder:
   pinMode(ENCODER_L_PIN, INPUT); 
@@ -16,13 +16,13 @@ void EncodersInit()
   // Right encoder:
   pinMode(ENCODER_R_PIN, INPUT); 
   
-  EncodersReset();
+  encodersReset();
 
   attachInterrupt(ENCODER_L_PIN, leftEncoder, CHANGE);   // left encoder interrupt
   attachInterrupt(ENCODER_R_PIN, rightEncoder, CHANGE);  // right encoder interrupt
 }
 
-void EncodersReset()
+void encodersReset()
 {
   Ldistance = 0;
   Rdistance = 0;
@@ -43,9 +43,11 @@ void rightEncoder()
   {
     //digitalWrite(DBG2_PIN, LOW);
     Rdistance--;
+    oRdistance--;
   } else if((int)pwm_R > 0) {
     //digitalWrite(DBG2_PIN, HIGH);
     Rdistance++;                // wheel moves forward, positive increase
+    oRdistance++;
   }
   //digitalWrite(DBG1_PIN, LOW);
 }
@@ -62,9 +64,11 @@ void leftEncoder()
   {
     //digitalWrite(DBG2_PIN, LOW);
     Ldistance--;
+    oLdistance--;
   } else if((int)pwm_L > 0) {
     //digitalWrite(DBG2_PIN, HIGH);
     Ldistance++;                // wheel moves forward, positive increase
+    oLdistance++;
   }
   //digitalWrite(DBG1_PIN, LOW);
 }

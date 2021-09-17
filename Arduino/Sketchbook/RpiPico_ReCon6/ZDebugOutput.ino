@@ -1,5 +1,5 @@
 
-void InitLeds()
+void ledsInit()
 {
 // debugging LEDs:
   pinMode(redLedPin, OUTPUT);
@@ -24,12 +24,6 @@ void printAll()
 //  Serial.print(k3);
 //  Serial.print("    K4=");
 //  Serial.println(k4);
-
-  // display the raw RC Channel PWM Inputs
-  Serial.print("R/C:   Right: ");
-  Serial.print(PW_RIGHT);
-  Serial.print("       Left: ");
-  Serial.println(PW_LEFT);
 
   Serial.print("Desired speed %:   Right: ");
   Serial.print(setpointSpeedR);
@@ -68,8 +62,45 @@ void printAll()
   Serial.print(joystickSpeedL);
   Serial.print(" speed R: ");
   Serial.println(joystickSpeedR);
+  
+  Serial.print("Odometry Encoders:  R: ");
+  Serial.print(oRdistance);
+  Serial.print("  L: ");
+  Serial.print(oLdistance);
+
+  Serial.print("     Pose: X=");
+  Serial.print(X);
+  Serial.print("  Y=");
+  Serial.print(Y);
+  Serial.print(" meters    Theta=");
+  Serial.print(Theta);
+  Serial.print("  (");
+  Serial.print(to360(Theta * 57.295));
+  Serial.println(" degrees)");
 }
-#endif
+
+// limits degrees "a" to 0...360
+double to360(double a)
+{
+  if(a > 0.0)
+  {
+    while (a >= 360.0)
+    {
+      a -= 360.0;
+    }
+  }
+  else if(a < 0.0)
+  {
+    while (a < 0.0)
+    {
+      a += 360.0;
+    }
+  }
+  
+  return a;
+}
+
+#endif // TRACE
 
 void shortBuzz()
 {

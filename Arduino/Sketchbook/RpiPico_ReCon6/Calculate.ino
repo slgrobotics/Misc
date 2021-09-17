@@ -1,42 +1,40 @@
 
-long distR;
-long distL;
+// Generic calculations here
 
-// speed control is based on measuring ticks per cycle (say, 100ms), scaling to 100% and feeding it to PID which has a setting of 0...100 also in %
-// for a drive configuration (particular robot) we need to measure ticks per cycle when on full power and wheels in the air.
+// ------------------------------------------------------------------------------------------------------
 
-void speed_calculate()
+void odometryReset()
 {
-  distR = Rdistance;   // around 570 with 20Hz cycle, full power and wheels in the air
-  //Rdistance = 0;     // same in EncodersReset()
-  distL = Ldistance;
-  //Ldistance = 0;
-  
-  // we don't need to keep track of total distances per wheel, only increments - for speed loop.
-  // beware - if EncodersReset() is not called often enough, L/Rdistance will
-  // overflow at 32K and cause violent jerking of the wheels!
-  //EncodersReset();
+  oLdistance = 0;
+  oRdistance = 0;
 
-  // note: this is the place to scale -100..100% speed to 255 pwm
+  X = Y = Theta = 0;
 
-  speedMeasured_R = (double)map(distR, -570, 570, -100, 100);  // first pair is number of ticks at full speed, we map it to 100%
-  speedMeasured_L = (double)map(distL, -570, 570, -100, 100);
+  odometry->Reset();
 }
 
-// **********************************************
-// Calculate the pwm, given the desired speed
-// **********************************************
-void pwm_calculate()
+void odometryProcess()
 {
-      // pick up values computed by PIDs. We must do it in float:
-      pwm_R += dpwm_R;
-      pwm_L += dpwm_L;
+  // odometry calculation takes 28us
+  // process encoders readings into X, Y, Theta using odometry library:
+  odometry->wheelEncoderLeftTicks = oLdistance;
+  odometry->wheelEncoderRightTicks = oRdistance;
 
-      // do not allow float values to grow beyond motor maximums:
-      pwm_R = constrain(pwm_R, -255.0, 255.0);     // Maximum / Minimum Limitations
-      pwm_L = constrain(pwm_L, -255.0, 255.0);
-  
-      // we also let set_motor() constrain local integer ipwm_L and ipwm_R to -255...255
+  odometry->Process();
+
+  if (odometry->displacement.halfPhi != 0.0 || odometry->displacement.dCenter != 0.0)
+  {
+    double theta = Theta + odometry->displacement.halfPhi;   // radians
+
+    // calculate displacement in the middle of the turn:
+    double dX = odometry->displacement.dCenter * cos(theta);      // meters
+    double dY = odometry->displacement.dCenter * sin(theta);      // meters
+
+    X += dX;
+    Y += dY;
+
+    Theta += odometry->displacement.halfPhi * 2.0;
+  }
 }
 
 // ------------------------------------------------------------------------------------------------------

@@ -15,7 +15,7 @@ const int LPWM_B = 2;
 
 #define DEADZONE 0
 
-void MotorsInit()
+void motorsInit()
 {
   // set mode for H-bridge pins, "PWM" ones must be PWM capable:
   
@@ -33,7 +33,7 @@ void MotorsInit()
   
   setTimerForPWM();
 
-  StopMotors();    // make sure motors are stopped
+  stopMotors();    // make sure motors are stopped
 }
 
 // ***********************************************************************
@@ -121,7 +121,7 @@ int toMotorPower(int pwr)  // pwr expected to be 0...255, it will be constrained
   return pwr;
 }
 
-void StopMotors()  // Both Motors will stop (feather).
+void stopMotors()  // Both Motors will stop (feather).
 {
   // Parking - H-Bridge disabled:
   digitalWrite(RPWM_A, LOW);
