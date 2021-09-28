@@ -1,9 +1,13 @@
 
-// While waiting for a fixed time loop, check out Pixy camera, joystick...
+// While waiting for a fixed time loop, check out Pixy camera, joystick, MPU...
 
 void idleTasks()
 {
   pixyBlocksCount += readPixyCamera();
+
+  //digitalWrite(DBG2_PIN, HIGH);
+  processMpu();
+  //digitalWrite(DBG2_PIN, LOW);
 
   if(isControlByJoystick())
   {
@@ -13,11 +17,11 @@ void idleTasks()
     
     desiredSpeedL = joystickSpeedL;
     desiredSpeedR = joystickSpeedR;
-  }
 
-  if(isJoystickPressed())
-  {
-    encodersReset();
-    odometryReset();
+    if(isJoystickPressed())
+    {
+      encodersReset();
+      odometryReset();
+    }
   }
 }

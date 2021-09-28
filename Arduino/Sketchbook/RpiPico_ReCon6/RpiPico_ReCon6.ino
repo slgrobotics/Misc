@@ -1,4 +1,21 @@
-//#define TRACE
+/*
+ * Copyright (c) 2021..., Sergei Grichine
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *    
+ * this is a no-warranty no-liability permissive license - you do not have to publish your changes,
+ * although doing so, donating and contributing is always appreciated
+ */
+ 
+#define TRACE
 //#define USE_EMA
 
 #include <PID_v1.h>
@@ -13,17 +30,23 @@
 // Sergei Grichine -  slg@quakemap.com   September 2021
 //
 
-//-------------------------------------- Variable definitions ---------------------------------------------//
+#define DBG1_PIN        14
+#define DBG2_PIN        15
 
 // debugging LEDs:
 const int redLedPin   = 16; // GP16
 const int greenLedPin = 17;
 const int blueLedPin  = 18;
 
-#define DBG1_PIN 14
-#define DBG2_PIN 15
-
 const int buzzerPin   = 19;   // Connected to a BC547 transistor - there is a protection diode at the buzzer as well
+
+//-------------------------------------- Variable definitions ---------------------------------------------//
+
+// https://github.com/hideakitai/MPU9250
+#include "MPU9250.h"
+
+// values from MPU:
+float yaw, pitch, roll; // -180...180
 
 const int mydt = 5;           // 5 milliseconds make for 200 Hz operating cycle
 const int pidLoopFactor = 20; // factor of 20 make for 100ms (10Hz) PID cycle
@@ -82,6 +105,9 @@ class PixyBlock {
 };
 PixyBlock pixyBlock;
 
+// Sonar readings, centimeters:
+int sonarLF, sonarF, sonarRF;
+
 // Odometry parameters and variables:
 
 // robot parameters:
@@ -113,6 +139,9 @@ void setup()
   pinMode(DBG2_PIN, OUTPUT);
 
   ledsInit();
+
+  Wire.begin();
+  mpuInit();
 
   motorsInit();    // motors will be stopped
   
@@ -158,6 +187,10 @@ void loop()
   {
     printLoopCnt = 0;
     printAll();    // takes 34ms and completely stops the 5ms cycle
+
+    // reset for debugging:
+    //digitalWrite(blueLedPin, LOW);
+    //digitalWrite(redLedPin, LOW);
   }
 #endif
 

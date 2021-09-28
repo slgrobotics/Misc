@@ -14,33 +14,40 @@ void pixyCameraInit()
   Serial2.begin(115200);      // GP8,9
 }
 
+//
+// actually, read Pixy and Sonars
+//
 int readPixyCamera()
 {
   int blocksCount = 0;
+  char buf[128];
   
   // if there's any serial available, read it:
   while (Serial2.available() > 0) {
 
     byte chrIn = Serial2.read();
 
-    if (chrIn == '*') {
-
+    if (chrIn == '*')
+    {
+      // pixy block reported:
       pixyBlock.x = Serial2.parseInt();
       pixyBlock.y = Serial2.parseInt();
       pixyBlock.width = Serial2.parseInt();
       pixyBlock.height = Serial2.parseInt();
-      pixyBlock.signature = Serial2.parseInt();
+      pixyBlock.signature = Serial2.parseInt(); // one of the colors defined in training
       blocksCount++;
+#ifdef TRACE
+      sprintf(buf, "*%d: *%d %d %d %d %d\n", blocksCount, pixyBlock.x, pixyBlock.y, pixyBlock.width, pixyBlock.height, pixyBlock.signature);   
+      Serial.print(buf);
+#endif // TRACE
+    } else if (chrIn == '#') {
+      
+      // sonar readings reported:
+      sonarLF = Serial2.parseInt();
+      sonarF  = Serial2.parseInt();
+      sonarRF = Serial2.parseInt();
     }
 
-#ifdef TRACE
-    // look for the newline. That's the end of your sentence:
-    if (chrIn == '\n' || chrIn == '\r') {
-      char buf[128];
-      sprintf(buf, "*%d %d %d %d %d\n", pixyBlock.x, pixyBlock.y, pixyBlock.width, pixyBlock.height, pixyBlock.signature);   
-      Serial.print(buf);
-    }
-#endif // TRACE
   }
 
 #ifdef TRACE

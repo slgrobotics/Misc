@@ -25,6 +25,13 @@ void printAll()
 //  Serial.print("    K4=");
 //  Serial.println(k4);
 
+  Serial.print("Sonars:   Left: ");
+  Serial.print(sonarLF);
+  Serial.print("   Front: ");
+  Serial.print(sonarF);
+  Serial.print("   Right: ");
+  Serial.println(sonarRF);
+
   Serial.print("Desired speed %:   Right: ");
   Serial.print(setpointSpeedR);
   Serial.print("       Left: ");
@@ -77,6 +84,8 @@ void printAll()
   Serial.print("  (");
   Serial.print(to360(Theta * 57.295));
   Serial.println(" degrees)");
+
+  printYawPitchRoll();
 }
 
 // limits degrees "a" to 0...360
@@ -105,9 +114,13 @@ double to360(double a)
 void shortBuzz()
 {
   // TODO: use http://playground.arduino.cc/Code/Timer1
-  digitalWrite(buzzerPin,HIGH);
-  delay(100);  
-  digitalWrite(buzzerPin,LOW);
+  for(int i=0; i < 1000 ;i++)
+  {
+    digitalWrite(buzzerPin,HIGH);
+    delay(1);  
+    digitalWrite(buzzerPin,LOW);
+    delay(1);  
+  }
 }
 
 // debugging LEDs:
