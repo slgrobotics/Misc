@@ -13,14 +13,3 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 47 6	* * 7	root	test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )
 52 6	1 * *	root	test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )
 #
-# Shutdown when router (eth0) is turned off:
-#* *	* * *	root	/bin/grep 'down' /sys/class/net/eth0/operstate && halt -p
-
-# Run off button:
-#* *	* * *	root	/bin/bash /home/pi/Projects/runOffButton.sh
-
-# Run camera player:
-#* *	* * *	root	/bin/bash /home/pi/Projects/runCameraPlayer.sh
-
-# Run Color Blob camera sensor:
-* *	* * *	root	/bin/bash /home/pi/Projects/runColorDetect.sh

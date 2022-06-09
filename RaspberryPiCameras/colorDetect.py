@@ -15,10 +15,12 @@ GPIO.setup(20, GPIO.OUT)	# yellow LED
 # settings:
 #serverUrl='http://172.16.1.201:9097'
 #serverUrl='http://172.16.1.175:9097'
-serverUrl='http://minwinpc:9097'
+#serverUrl='http://minwinpc:9097'
+serverUrl='http://sergeipwr:9097'
+#serverUrl='http://172.16.1.201:9097'
 
-#showframes = True
-showframes = False
+showframes = True
+#showframes = False
  
 # initialize the camera and grab a reference to the raw camera capture
 camera = PiCamera()
