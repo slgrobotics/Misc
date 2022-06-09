@@ -1,0 +1,23 @@
+
+Shutdown when router (eth0) is turned off:
+
+You could write a script that checks the content of the file /sys/class/net/eth0/operstate in a loop. When the state shows down execute the halt command on your RPi.
+Something like:
+  while true
+    grep 'down' /sys/class/net/eth0/operstate && halt
+    sleep 5
+  done
+
+Note:   it is eth1 on odroid
+
+Or, even better with a cron job run, say, every 2 minutes:
+*/2 * * * * root /bin/grep 'down' /sys/class/net/eth0/operstate && halt -p
+
+Pasted from <http://raspberrypi.stackexchange.com/questions/13423/shutting-down-my-pi-safely> 
+
+
+edit /etc/crontab
+
+===========================================
+
+

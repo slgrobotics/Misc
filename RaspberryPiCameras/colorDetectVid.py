@@ -17,16 +17,28 @@ GPIO.setup(20, GPIO.OUT)	# yellow LED
 #serverUrl='http://172.16.1.175:9097'
 serverUrl='http://minwinpc:9097'
 
-#showframes = True
-showframes = False
+showframes = True
+#showframes = False
  
 # initialize the camera and grab a reference to the raw camera capture
-camera = PiCamera()
-camera.resolution = (320, 240)
-camera.framerate = 30
-camera.hflip = True
+#camera = PiCamera()
+#camera.resolution = (320, 240)
+#camera.framerate = 30
+#camera.hflip = True
 
-rawCapture = PiRGBArray(camera, size=(320, 240))
+#rawCapture = PiRGBArray(camera, size=(320, 240))
+
+
+filename = '/home/pi/Projects/TestVideos/2016-06-12_18.10.02.h264'
+#filename = '/home/pi/Projects/TestVideos/2016-06-12_18.09.23.h264'
+#filename = '/home/pi/Projects/TestVideos/2016-06-12_18.13.02.h264'
+
+try:
+    rawCapture = cv2.VideoCapture(filename)
+except:
+    print('Could not open video file')
+
+
  
 # allow the camera to warmup
 time.sleep(0.1)
@@ -47,10 +59,21 @@ while True :
     keepsession = True
  
     # capture frames from the camera
-    for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
-	# grab the raw NumPy array representing the image, then initialize the timestamp
-	# and occupied/unoccupied text
-        image = frame.array
+    #for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+
+    ret = True
+    while ret:
+        ret, frame = rawCapture.read()
+        if ret != True :
+           rawCapture.release()
+           cv2.destroyAllWindows()
+           exit()
+
+
+        # grab the raw NumPy array representing the image, then initialize the timestamp
+        # and occupied/unoccupied text
+        #image = frame.array
+        image = frame
 
         blur = cv2.blur(image, (5,5))
 
@@ -119,32 +142,9 @@ while True :
                         if showframes :
                                 print(cx, cy, size)
 
-                        payload="{} {} {} {} 1".format(cx, cy, size, size)
-                        connectTimeout = 0.1
-                        readTimeout = 0.1
-                        
-                        try:
-                                r = s.post(serverUrl,
-                                                  data=payload,
-                                                  timeout=(connectTimeout,readTimeout))
-                                GPIO.output(20, True)
-
-                                #print("response:", r.text)
-
-                        except requests.exceptions.ConnectionError as exc:
-                                keepsession = False
-                                if showframes :
-                                        print("connection error")
-                        except requests.exceptions.ConnectTimeout as exc:
-                                keepsession = False
-                                if showframes :
-                                        print("connection timeout")
-                        except requests.exceptions.ReadTimeout as exc:
-                                if showframes :
-                                        print("read timeout")
 
         # clear the stream in preparation for the next frame
-        rawCapture.truncate(0)
+        #rawCapture.truncate(0)
         frames = frames + 1
 
         if keepsession == False :
@@ -155,6 +155,7 @@ while True :
          
                 # if the `q` key was pressed, break from the loop
                 if key == ord("q"):
+                        rawCapture.release()
                         exit()
 
                 # Apparently not supported for my cameras:
