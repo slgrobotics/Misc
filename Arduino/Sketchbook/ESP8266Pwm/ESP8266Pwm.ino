@@ -63,8 +63,8 @@ void loop()
 
   dir = dir ? false : true;
 
-  //digitalWrite(stopPin, HIGH);
-  //digitalWrite(brakePin, HIGH);
+  //digitalWrite(stopPin, HIGH);  // feather the wheels, no matter what other pins are
+  //digitalWrite(brakePin, HIGH); // apply braking torque, resisting rotation moderately
   
 }
 
