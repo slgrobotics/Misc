@@ -12,14 +12,24 @@
 #define D5 14 // SPI Bus SCK (clock)
 #define D6 12 // SPI Bus MISO 
 #define D7 13 // SPI Bus MOSI
-#define D8 15 // SPI Bus SS (CS)
+#define D8 15 // SPI Bus SS (CS) - use D0 instead
 #define D9 3  // RX0 (Serial console)
 #define D10 1 // TX0 (Serial console)
 
+#define SD1 8   // SDD1
+#define SD0 7   // SDD0, MISO
+#define SD2 9   // SDD2 - do not use!
+#define SD3 10  // SDD3
+
+#define SDCLK 6  // SDCLK, CLK
+#define SDCMD 11 // SDCMD, CMD
+
+// See https://www.electronicwings.com/nodemcu/nodemcu-spi-with-arduino-ide
+// Note: D8/HCS - boot fails if it is pulled high, see https://randomnerdtutorials.com/esp8266-pinout-reference-gpios/
 //If you want to use NodeMCU pin 5, use D5 for pin number, and it will be translated to 'real' GPIO pin 14.
 
 // Built in LED:
-int pinLED = 16;  // HiLetgo 
+int pinLED = 16;  // HiLetgo, NodeMCU D0 
 //int pinLED = 0;   // Adafruit Feather HUZZAH 
 
 int rightPwmPin = D6;
