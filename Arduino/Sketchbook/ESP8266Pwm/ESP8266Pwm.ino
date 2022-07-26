@@ -29,7 +29,7 @@
 // If you want to use NodeMCU pin 5, use D5 for pin number, and it will be translated to 'real' GPIO pin 14.
 
 // Built in LED:
-int pinLED = 16;  // HiLetgo, NodeMCU D0 
+int pinLED = D0;  // HiLetgo, NodeMCU D0 
 //int pinLED = 0;   // Adafruit Feather HUZZAH
 
 #include <Shifty.h>
