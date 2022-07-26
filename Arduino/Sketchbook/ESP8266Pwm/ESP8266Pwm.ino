@@ -26,20 +26,36 @@
 
 // See https://www.electronicwings.com/nodemcu/nodemcu-spi-with-arduino-ide
 // Note: D8/HCS - boot fails if it is pulled high, see https://randomnerdtutorials.com/esp8266-pinout-reference-gpios/
-//If you want to use NodeMCU pin 5, use D5 for pin number, and it will be translated to 'real' GPIO pin 14.
+// If you want to use NodeMCU pin 5, use D5 for pin number, and it will be translated to 'real' GPIO pin 14.
 
 // Built in LED:
 int pinLED = 16;  // HiLetgo, NodeMCU D0 
-//int pinLED = 0;   // Adafruit Feather HUZZAH 
+//int pinLED = 0;   // Adafruit Feather HUZZAH
 
+#include <Shifty.h>
+
+// uses Shifty Arduino library
+//      https://www.arduino.cc/reference/en/libraries/shifty/
+//      https://github.com/johnnyb/Shifty
+//
+
+int latchPin = D0;  // Latch pin 12 of 74HC595
+int clockPin = D3;  // Clock pin 11 of 74HC595
+int dataPin = SD3;  // Data pin 14 of 74HC595
+
+// Declare the shift register
+Shifty shift; 
+
+// we command PWM directly, and dir/stop/brake via shift register
 int rightPwmPin = D6;
-int rightDirPin = D8;
-
 int leftPwmPin = D7;
-int leftDirPin = D5;
 
-int stopPin = D4;
-int brakePin = D3;
+// bit 0 connected to yellow LED for testing
+int testBit = 0;
+int rightDirBit = 1;
+int leftDirBit = 2;
+int stopBit = 3;
+int brakeBit = 4;
 
 int delayMs = 20;
 bool dir = true;  // true - forward
@@ -47,15 +63,27 @@ int power = 0;    // max 255
 
 void setup()
 {
-  pinMode(rightPwmPin, OUTPUT);
-  pinMode(rightDirPin, OUTPUT);
-  pinMode(leftPwmPin, OUTPUT);
-  pinMode(leftDirPin, OUTPUT);
-  pinMode(stopPin, OUTPUT);
-  pinMode(brakePin, OUTPUT);
+  // Set the number of bits you have (multiples of 8)
+  shift.setBitCount(8);
 
-  digitalWrite(stopPin, LOW);
-  digitalWrite(brakePin, LOW);
+  // Set the data, clock, and latch pins you are using
+  // This also sets the pinMode for these pins
+  //shift.setPins(11, 12, 8); // data on pin 11, clock on pin 12, and latch on pin 8
+  shift.setPins(dataPin, clockPin, latchPin); 
+
+  pinMode(rightPwmPin, OUTPUT);
+  pinMode(leftPwmPin, OUTPUT);
+
+  analogWrite(rightPwmPin, 0);
+  analogWrite(leftPwmPin, 0);
+
+  shift.batchWriteBegin();
+  shift.writeBit(testBit, LOW);
+  shift.writeBit(stopBit, LOW);
+  shift.writeBit(brakeBit, LOW);
+  shift.writeBit(rightDirBit, LOW);
+  shift.writeBit(leftDirBit, LOW);
+  shift.batchWriteEnd();
 }
 
 // Generated PWM frequency will be 1.00 kHz - quite precise.
@@ -71,17 +99,21 @@ void loop()
     motorCycle(dir, power);
   }
 
-  dir = dir ? false : true;
+  dir = !dir;
 
-  //digitalWrite(stopPin, HIGH);  // feather the wheels, no matter what other pins are
-  //digitalWrite(brakePin, HIGH); // apply braking torque, resisting rotation moderately
+  //shift.writeBit(stopBit, HIGH);  // feather the wheels, no matter what other pins are
+  //shift.writeBit(brakeBit, HIGH); // apply braking torque, resisting rotation moderately
   
 }
 
 void motorCycle(bool dir, int power)
 {
-  digitalWrite(rightDirPin, dir ? LOW : HIGH);
-  digitalWrite(leftDirPin, dir ? HIGH : LOW);
+  shift.batchWriteBegin();
+  shift.writeBit(testBit, dir ? LOW : HIGH);
+  shift.writeBit(rightDirBit, dir ? LOW : HIGH);
+  shift.writeBit(leftDirBit, dir ? HIGH : LOW);
+  shift.batchWriteEnd();
+  
   analogWrite(rightPwmPin, power);
   analogWrite(leftPwmPin, power);
   delay(delayMs);
