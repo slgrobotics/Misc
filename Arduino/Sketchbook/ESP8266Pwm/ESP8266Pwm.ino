@@ -29,8 +29,8 @@
 // If you want to use NodeMCU pin 5, use D5 for pin number, and it will be translated to 'real' GPIO pin 14.
 
 // Built in LED:
-int pinLED = D0;  // HiLetgo, NodeMCU D0 
-//int pinLED = 0;   // Adafruit Feather HUZZAH
+const int pinLED = D0;  // HiLetgo, NodeMCU D0 
+//const int pinLED = 0;   // Adafruit Feather HUZZAH
 
 #include <Shifty.h>
 
@@ -39,30 +39,33 @@ int pinLED = D0;  // HiLetgo, NodeMCU D0
 //      https://github.com/johnnyb/Shifty
 //
 
-int latchPin = D0;  // Latch pin 12 of 74HC595
-int clockPin = D3;  // Clock pin 11 of 74HC595
-int dataPin = SD3;  // Data pin 14 of 74HC595
-
-// Declare the shift register
+// Declare the shift register (74HC595)
 Shifty shift; 
 
+const int latchPin = D0;  // Latch pin 12 of 74HC595
+const int clockPin = D3;  // Clock pin 11 of 74HC595
+const int dataPin = SD3;  // Data pin 14 of 74HC595
+
 // we command PWM directly, and dir/stop/brake via shift register
-int rightPwmPin = D6;
-int leftPwmPin = D7;
+const int rightPwmPin = D6;
+const int leftPwmPin = D7;
 
 // bit 0 connected to yellow LED for testing
-int testBit = 0;
-int rightDirBit = 1;
-int leftDirBit = 2;
-int stopBit = 3;
-int brakeBit = 4;
+const int testBit = 0;
+const int rightDirBit = 1;
+const int leftDirBit = 2;
+const int stopBit = 3;
+const int brakeBit = 4;
 
-int delayMs = 20;
+const int delayMs = 20;
 bool dir = true;  // true - forward
 int power = 0;    // max 255
 
 void setup()
 {
+  Serial.begin(115200);   // start serial 
+  delay(100);
+
   // Set the number of bits you have (multiples of 8)
   shift.setBitCount(8);
 
@@ -74,6 +77,7 @@ void setup()
   pinMode(rightPwmPin, OUTPUT);
   pinMode(leftPwmPin, OUTPUT);
 
+  // make sure motors are stopped:
   analogWrite(rightPwmPin, 0);
   analogWrite(leftPwmPin, 0);
 

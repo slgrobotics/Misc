@@ -43,7 +43,7 @@
 //If you want to use NodeMCU pin 5, use D5 for pin number, and it will be translated to 'real' GPIO pin 14.
 
 // Built in LED:
-int pinLED = 16;  // HiLetgo 
+int pinLED = D0;  // HiLetgo 
 //int pinLED = 0;   // Adafruit Feather HUZZAH 
 
 //const int bmi160csPin = 10; // Arduino UNO;
