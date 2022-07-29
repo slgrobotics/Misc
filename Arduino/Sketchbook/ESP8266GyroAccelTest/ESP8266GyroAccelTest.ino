@@ -65,7 +65,7 @@ const int i2c_addr = 0x69;  // see I2cdetect library example scan
  
 void setup() 
 {
-  Serial.begin(9600); // initialize Serial communication
+  Serial.begin(115200); // initialize Serial communication
   while (!Serial);    // wait for the serial port to open
 
   delay(1000);

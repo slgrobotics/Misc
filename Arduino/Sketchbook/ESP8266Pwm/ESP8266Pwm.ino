@@ -40,14 +40,14 @@ const int pinLED = D0;  // HiLetgo, NodeMCU D0
 //
 
 // Declare the shift register (74HC595)
-Shifty shift; 
+Shifty shift;
 
 const int latchPin = D0;  // Latch pin 12 of 74HC595
 const int clockPin = D3;  // Clock pin 11 of 74HC595
 const int dataPin = SD3;  // Data pin 14 of 74HC595
 
 // we command PWM directly, and dir/stop/brake via shift register
-const int rightPwmPin = D6;
+const int rightPwmPin = D8;
 const int leftPwmPin = D7;
 
 // bit 0 connected to yellow LED for testing

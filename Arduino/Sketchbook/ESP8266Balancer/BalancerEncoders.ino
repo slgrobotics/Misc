@@ -2,25 +2,25 @@
 
 // interrupts:
 // must have to avoid crashing on ESP8266:
-void ICACHE_RAM_ATTR leftEncoder();
-void ICACHE_RAM_ATTR rightEncoder();
+void ICACHE_RAM_ATTR leftEncoderIsr();
+void ICACHE_RAM_ATTR rightEncoderIsr();
 
 // **************************
 //     Init the Encoders
 // **************************
 void initEncoders()
 {
-  pinMode(D4, INPUT_PULLUP);  // left
-  pinMode(D5, INPUT_PULLUP);  // right
+  pinMode(leftEncoderPin, INPUT_PULLUP);
+  pinMode(rightEncoderPin, INPUT_PULLUP);
 
-  attachInterrupt(digitalPinToInterrupt(D4), leftEncoder, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(D5), rightEncoder, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(leftEncoderPin), leftEncoderIsr, FALLING);
+  attachInterrupt(digitalPinToInterrupt(rightEncoderPin), rightEncoderIsr, FALLING);
 }
 
 // ************************************
 //    Read distance from the encoders
 // ************************************
-void leftEncoder()
+void leftEncoderIsr()
 {
   // we spend around 10us in the interrupt, at approx 1kHz frequency at pwm=80
   //digitalWrite(debugPin1, HIGH);
@@ -36,7 +36,7 @@ void leftEncoder()
   //digitalWrite(debugPin1, LOW);
 }
 
-void rightEncoder()
+void rightEncoderIsr()
 {
   // we spend around 10us in the interrupt, at approx 1kHz frequency at pwm=80
   //digitalWrite(debugPin1, HIGH);

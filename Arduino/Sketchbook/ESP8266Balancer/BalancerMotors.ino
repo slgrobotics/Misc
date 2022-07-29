@@ -1,6 +1,11 @@
 
 #define DEADZONE 0
 
+// limit power up to 255:
+#define MAX_POWER 20
+
+bool motorsStopped = true;
+
 void initMotors()
 {
   pinMode(rightPwmPin, OUTPUT);
@@ -11,7 +16,7 @@ void initMotors()
   analogWrite(leftPwmPin, 0);
 
   shift.batchWriteBegin();
-  shift.writeBit(stopBit, LOW);     // HIGH - feathers wheels
+  shift.writeBit(stopBit, HIGH);     // HIGH - feathers wheels
   shift.writeBit(brakeBit, LOW);    // HIGH - applies moderate braking power
   shift.writeBit(rightDirBit, LOW);
   shift.writeBit(leftDirBit, LOW);
@@ -23,17 +28,22 @@ void initMotors()
 // ***********************************************************************
 void set_motor()
 {
-  if(pwm_R > 255)      // Maximum / Minimum Limitations
-    pwm_R = 255;
+  if(motorsStopped)
+  {
+    shift.writeBit(stopBit, LOW);
+  }
+  
+  if(pwm_R > MAX_POWER)      // Maximum / Minimum Limitations
+    pwm_R = MAX_POWER;
     
-  if(pwm_R < -255)
-    pwm_R = -255;
+  if(pwm_R < -MAX_POWER)
+    pwm_R = -MAX_POWER;
 
-  if(pwm_L > 255)
-    pwm_L = 255;
+  if(pwm_L > MAX_POWER)
+    pwm_L = MAX_POWER;
     
-  if(pwm_L < -255)
-    pwm_L = -255;
+  if(pwm_L < -MAX_POWER)
+    pwm_L = -MAX_POWER;
   
   // Set Right wheel's direction and speed
   if(pwm_R == 0)

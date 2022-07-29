@@ -74,7 +74,6 @@ float range;
 float direction_error_all;
 float distance_per_cycle;
 float wheel_speed;
-float angle_setpoint_compensated = 0.0;  // degrees, positive when tilting backwards. Compensated for GC shifts under load.
 float angle_setpoint_remote = 0.0;
 float distance_setpoint_remote = 0.0;
 
@@ -86,7 +85,7 @@ float speedEma = 0.0;
 
 // motor pins - PWM and Direction:
 // we command PWM directly, and dir/stop/brake via shift register
-const int rightPwmPin = D6;    // Speed Control      (RightMotorPWM, 1kHz)
+const int rightPwmPin = D8;    // Speed Control      (RightMotorPWM, 1kHz)
 const int leftPwmPin = D7;     // Speed Control      (LeftMotorPWM,  1kHz)
 
 const int testBit = 0;        // bit 0 connected to yellow LED for testing
@@ -97,6 +96,10 @@ const int brakeBit = 4;       // applies moderate braking force to both motors
 const int rightLedBit = 5;    // built-in LED in the hoverboard
 const int leftLedBit = 6;     // built-in LED in the hoverboard
 
+// Encoder interrupt pins:
+const int rightEncoderPin = D6;
+const int leftEncoderPin = D5;
+
 // these are obsolete on ESP8266, no free pins ;-(
 const int debugPin1 = 10;
 const int debugPin2 = 11;
@@ -106,7 +109,7 @@ const int debugPin2 = 11;
 void setup()
 {
   Serial.begin(115200);   // start serial 
-  delay(100);
+  //delay(100);
 
   // DEBUG pins:
   //pinMode(debugPin1, OUTPUT);
@@ -119,6 +122,8 @@ void setup()
   // This also sets the pinMode for these pins
   shift.setPins(dataPin, clockPin, latchPin); 
 
+  initMotors(); // uses stift register
+
   shift.batchWriteBegin();
   shift.writeBit(testBit, LOW);
   shift.writeBit(rightLedBit, LOW);
@@ -129,8 +134,6 @@ void setup()
 
   GyroCalibrate();
   delay(100);
-
-  initMotors();
 
   initPids();
   
@@ -186,8 +189,8 @@ void loop()
       pwm_calculate(); // takes 0.14ms
 
       // test: At both motors set to +80 expect Ldistance and Rdistance to show 6...7 at 2ms delay below
-      //pwm_R = 80;
-      //pwm_L = 80;
+      pwm_R = -10;
+      pwm_L = 10;
 
       set_motor();  // takes 0.12ms
     }
@@ -229,14 +232,14 @@ void printAll()
   Serial.print("   Y=");
   Serial.print(GyroY);
   Serial.print("   Z=");
-  Serial.print(GyroZ);
+  Serial.println(GyroZ);
 
   Serial.print("Accel:   X=");
   Serial.print(AccelX);
   Serial.print("   Y=");
   Serial.print(AccelY);
   Serial.print("   Z=");
-  Serial.print(AccelZ);
+  Serial.println(AccelZ);
 
   Serial.print("Angle calculation:   acceleration=");
   Serial.print(acceleration);
@@ -268,8 +271,6 @@ void printAll()
   Serial.println(speedEma);
   Serial.print("       angle: ");
   Serial.println(angle);
-  Serial.print("       angle_setpoint_compensated: ");
-  Serial.println(angle_setpoint_compensated);
 }
 
 void shortBuzz()

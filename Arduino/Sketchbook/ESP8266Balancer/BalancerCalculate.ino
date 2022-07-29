@@ -28,7 +28,6 @@ void pwm_calculate()
   {
     // something is wrong (wheels spinning?) - reset calculations
     range = 0.0;
-    angle_setpoint_compensated = 0.0;
     shortBuzz();
   }
 
@@ -42,40 +41,7 @@ void pwm_calculate()
   // see where is average speed by using ema:
   ema(SpeedChannel);
 
-  bool doLoadCompensation = false;
-  #define LoadCompensationTreshold 1.0
-  #define LoadCompensationStep 0.1
-  #define LoadCompensationMaxAngle 25.0
-
-  if(doLoadCompensation)
-  {
-    if(speedEma > LoadCompensationTreshold)
-    {
-//      if(angle_setpoint_compensated < 0.0)
-//      {
-//        angle_setpoint_compensated = 0.0;
-//      }
-      // we are moving ahead (some load at front?). To compensate we need to tilt back.
-      if(angle_setpoint_compensated < LoadCompensationMaxAngle)
-      {
-        angle_setpoint_compensated += LoadCompensationStep;
-      }
-    }
-    else if(speedEma < -LoadCompensationTreshold)
-    {
-//      if(angle_setpoint_compensated > 0.0)
-//      {
-//        angle_setpoint_compensated = 0.0;
-//      }
-      // we are moving backwards (some load on the back?). To compensate we need to tilt forward.
-      if(angle_setpoint_compensated > -LoadCompensationMaxAngle)
-      {
-        angle_setpoint_compensated -= LoadCompensationStep;
-      }
-    }
-  }
-
-  float angle_error = angle - angle_setpoint_compensated - angle_setpoint_remote;
+  float angle_error = angle - angle_setpoint_remote;
 
   pwm = (angle_error * k1) + (angle_dot * k2) - (range_error * k3) - (distance_per_cycle * k4);    // use PID to calculate the pwm
 
