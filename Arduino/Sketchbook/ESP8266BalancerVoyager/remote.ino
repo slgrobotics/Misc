@@ -1,5 +1,9 @@
 // **************************
 // Remote control code
+//
+// takes chars from serial via Bluetooth BLE-LINK and
+// produces throttle and steering
+//
 // **************************
 
 #define CHANNEL_IDENTIFY         0    // send back device ident string
@@ -11,8 +15,19 @@
 #define CMD_DRIVE_STOP           10
 #define CMD_DRIVE_MOVE           11
 
+void initRemote()
+{
+  //pinMode(D7, INPUT);
 
-void control()
+  Serial.println();
+  Serial.println("BLE_Link activation, calling swap()");
+  delay(1000);
+  //Serial.swap(); // put serial on D7 (RX) and D8 (TX)
+  delay(1000);
+  Serial.println("after swap()");
+}
+
+void remote()
 {
   if(Serial.available())  // takes 8us if false
   {
@@ -22,30 +37,30 @@ void control()
     {
     case 'a':             // forward
         //shortBuzz();
-        if(angle_setpoint_remote > -8)         
+        if(throttle > -8)         
         { 
-          angle_setpoint_remote -= 1.0;
+          throttle -= 1.0;
         }
         break;
           
     case 'b':             // backwards
-        if(angle_setpoint_remote < 8)
+        if(throttle < 8)
         { 
-          angle_setpoint_remote += 1.0;
+          throttle += 1.0;
         }
         break;
           
     case 's':             // stop
-        angle_setpoint_remote=0;
-        turn_flag=0;
+        throttle=0;
+        steering=0;
         break;
       
     case 'r':             // right
-        turn_flag=1;      // positive angle
+        steering=1;      // positive angle
         break;
       
     case 'l':            // left
-        turn_flag=-1;    // negative angle
+        steering=-1;    // negative angle
         break;
       
     case '*':            // ToArduino packet
@@ -140,8 +155,8 @@ void controlAction(int channel, int command, int nValues, int* cmdValues)
             switch(command)
             {
               case CMD_DRIVE_STOP:
-                angle_setpoint_remote=0;
-                turn_flag=0;
+                throttle=0;
+                steering=0;
                 break;
                 
               case CMD_DRIVE_MOVE:
@@ -159,15 +174,15 @@ void controlAction(int channel, int command, int nValues, int* cmdValues)
                   //if(speed * speed + turn * turn > 65000.0f)
                   {
                     /*
-                    if(angle_setpoint_remote > -4.0 && angle_setpoint_remote < 4.0)         
+                    if(throttle > -4.0 && throttle < 4.0)         
                     { 
-                      angle_setpoint_remote += speed / 30.0;
+                      throttle += speed / 30.0;
                     }
                     */
                     
-                    angle_setpoint_remote = speed / 100.0;
+                    throttle = speed / 100.0;
                     
-                    turn_flag = turn / 200.0;
+                    steering = turn / 200.0;
                   }
                 }
                 break;

@@ -100,9 +100,15 @@ void loop()
   int gxRaw, gyRaw, gzRaw;         // raw gyro values
   float gx, gy, gz;
 
+  int tRaw;
+  float temperature;
+
   // read raw gyro measurements from device
   //BMI160.readGyro(gxRaw, gyRaw, gzRaw);
   BMI160.readMotionSensor(axRaw, ayRaw, azRaw, gxRaw, gyRaw, gzRaw);
+  //BMI160.readGyro(gxRaw, gyRaw, gzRaw);
+  //BMI160.readAccelerometer(axRaw, ayRaw, azRaw);
+  tRaw = BMI160.readTemperature();
 
   // convert the raw accelerometer data to G's
   ax = convertRawAccelerometer(axRaw);
@@ -113,6 +119,8 @@ void loop()
   gx = convertRawGyro(gxRaw);
   gy = convertRawGyro(gyRaw);
   gz = convertRawGyro(gzRaw);
+
+  temperature = convertRawTemperature(tRaw);
 
   // display tab-separated gyro x/y/z values
   Serial.print("a:\t");
@@ -129,6 +137,8 @@ void loop()
   Serial.print(gy);
   Serial.print("\t");
   Serial.print(gz);
+  Serial.print("\tt:\t");
+  Serial.print(temperature);
   Serial.println();
 
   delay(500);
@@ -154,4 +164,21 @@ float convertRawGyro(int gRaw)
   float g = (gRaw * 250.0) / 32768.0;
 
   return g;
+}
+
+float convertRawTemperature(int tRaw) 
+{
+  // a 16-bit converted the following way:
+  // 0x7FFF    ->  87 C
+  // 0x0000    ->   0 C
+  // 0x8001    -> -41 C
+  
+  float t = -100.0; // invalid, when tRaw=0x8000
+
+  if(tRaw != 0x8000)
+  {
+    t = 23.0 + (tRaw * (87.0-23.0)) / 0x7FFF;
+  }
+
+  return t;
 }

@@ -52,8 +52,8 @@
 #define D4 2  // Same as "LED_BUILTIN", but inverted logic
 #define D5 14 // SPI Bus SCK (clock)
 #define D6 12 // SPI Bus MISO 
-#define D7 13 // SPI Bus MOSI
-#define D8 15 // SPI Bus SS (CS)
+#define D7 13 // SPI Bus MOSI / RXD2
+#define D8 15 // SPI Bus SS (CS) / TXD2
 #define D9 3  // RX0 (Serial console)
 #define D10 1 // TX0 (Serial console)
 
@@ -130,6 +130,7 @@ const int stopBit = 3;        // feathers both wheels
 const int brakeBit = 4;       // applies moderate braking force to both motors
 const int rightLedBit = 5;    // built-in LED in the hoverboard
 const int leftLedBit = 6;     // built-in LED in the hoverboard
+const int buzzerBit = 7;      // small 5V buzzer
 
 // Encoder interrupt pins:
 const int rightEncoderPin = D6;
@@ -155,13 +156,22 @@ void setup()
   // This also sets the pinMode for these pins
   shift.setPins(dataPin, clockPin, latchPin); 
 
+  shift.batchWriteBegin();
+  shift.writeBit(rightLedBit, LOW);
+  shift.writeBit(leftLedBit, LOW);
+  shift.writeBit(buzzerBit, LOW);
+  shift.batchWriteEnd();
+
   initMotors();
 
   initEncoders();
+
+  initRemote();
 }
 
 unsigned long lastPrintTime = 0;
 const int printIntervalMs = 1000;
+bool ledState = true;
 
 void loop() 
 {
@@ -175,6 +185,8 @@ void loop()
       // tilted too much, stop
       pwm_R = pwm_L = 0;
     }
+
+    remote();  // see if throttle and steering came from bluetooth (BLE-LINK) serial
 
     // calculate the target angle for throttle control
     float target_pitch = lpf_pitch_cmd(pid_vel((motor1_shaft_velocity + motor2_shaft_velocity) / 2 - lpf_throttle(throttle)));
@@ -192,7 +204,19 @@ void loop()
     if(millis() - lastPrintTime >= printIntervalMs)
     {
       lastPrintTime = millis();
-      
+
+      ledState = !ledState;
+      shift.writeBit(testBit, ledState ? HIGH : LOW);
+
+      float voltage = getBatteryVoltage();
+
+      if(voltage < 37.0)
+      {
+        shortBuzz();
+        Serial.print("Error: Battery voltage too low: ");
+        Serial.println(voltage);
+      }
+
       Serial.print("Pitch: ");
       Serial.print(pitch);
       Serial.print("     pwm  R: ");
@@ -202,9 +226,31 @@ void loop()
       Serial.print("     Encoders:  R: ");
       Serial.print(Rdistance);
       Serial.print("   L: ");
-      Serial.println(Ldistance);
+      Serial.print(Ldistance);
+      Serial.print("   Voltage: ");
+      Serial.print(voltage);
+      Serial.print("   throttle: ");
+      Serial.print(throttle);
+      Serial.print("   steering: ");
+      Serial.println(steering);
     }
 
     set_motors();
   }
+}
+
+float getBatteryVoltage()
+{
+  // a voltage divider - 82K and 6.8K cuts 42V into a 3.3V range
+  int analogVal = analogRead(A0) - 8; // reads 8 when grounded
+  //Serial.print("   A0 read: ");
+  //Serial.println(analogVal);
+  return 41.6 * ((float)analogVal) / 926.0; // reads 926 when voltage is 41.6V
+}
+
+void shortBuzz()
+{
+  shift.writeBit(buzzerBit, HIGH);
+  delay(100);  
+  shift.writeBit(buzzerBit, LOW);
 }

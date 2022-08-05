@@ -2,7 +2,7 @@
 #define DEADZONE 0
 
 // limit power up to 255:
-#define MAX_POWER 20
+#define MAX_POWER 100
 
 bool motorsStopped = true;
 
@@ -26,7 +26,7 @@ void initMotors()
 // ***********************************************************************
 //   Set motor power for both motors. Positive is forward. Takes 0.12ms
 // ***********************************************************************
-void set_motor()
+void set_motors()
 {
   if(motorsStopped)
   {
@@ -55,20 +55,20 @@ void set_motor()
 //    if(pwm_R < DEADZONE)
 //      pwm_R = DEADZONE;
 
-     pwm_R = map(pwm_R, 1, 255, DEADZONE+1, 255);
+     int pwm = (int)map(pwm_R, 1, 255, DEADZONE+1, 255);
     
      shift.writeBit(rightDirBit, HIGH);    // direction forward
-     analogWrite(rightPwmPin, pwm_R);
+     analogWrite(rightPwmPin, pwm);
   }
   else // pwm_R < 0
   {
 //    if(pwm_R > -DEADZONE)
 //      pwm_R = -DEADZONE;
     
-     pwm_R = map(pwm_R, -1, -255, -DEADZONE-1, -255);
+     int pwm = (int)map(pwm_R, -1, -255, -DEADZONE-1, -255);
     
      shift.writeBit(rightDirBit, LOW);     // direction backwards
-     analogWrite(rightPwmPin, -pwm_R);
+     analogWrite(rightPwmPin, -pwm);
   }
   
   // Set Left wheel's direction and speed:
@@ -81,19 +81,19 @@ void set_motor()
 //    if(pwm_L < DEADZONE)
 //      pwm_L = DEADZONE;
     
-     pwm_L = map(pwm_L, 1, 255, DEADZONE+1, 255);
+     int pwm = (int)map(pwm_L, 1, 255, DEADZONE+1, 255);
     
      shift.writeBit(leftDirBit, LOW);     // direction forward
-     analogWrite(leftPwmPin, pwm_L);
+     analogWrite(leftPwmPin, pwm);
   }
   else // pwm_L < 0
   {
 //    if(pwm_L > -DEADZONE)
 //      pwm_L = -DEADZONE;
     
-     pwm_L = map(pwm_L, -1, -255, -DEADZONE-1, -255);
+     int pwm = (int)map(pwm_L, -1, -255, -DEADZONE-1, -255);
     
      shift.writeBit(leftDirBit, HIGH);    // direction backwards
-     analogWrite(leftPwmPin, -pwm_L);
+     analogWrite(leftPwmPin, -pwm);
   }
 }
