@@ -230,12 +230,17 @@ void printAll()
 //  Serial.print("       Left Ldistance: ");
 //  Serial.println(Ldur);
 //
+  Serial.print("Control:  angle: ");
+  Serial.print(angle_setpoint_remote);
+  Serial.print("     turn: ");
+  Serial.println(turn_flag);
+
   Serial.print("Ema:  tilt: ");
   Serial.print(tiltEma);
   Serial.print("       speed: ");
-  Serial.println(speedEma);
+  Serial.print(speedEma);
   Serial.print("       angle: ");
-  Serial.println(angle);
+  Serial.print(angle);
   Serial.print("       angle_setpoint_compensated: ");
   Serial.println(angle_setpoint_compensated);
 }
@@ -246,4 +251,3 @@ void shortBuzz()
   delay(100);  
   digitalWrite(buzzer,LOW);
 }
-
