@@ -1,0 +1,110 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:id="@+id/buttonScan"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Scan"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
+
+    <EditText
+        android:id="@+id/serialReceivedText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textMultiLine"
+        android:layout_below="@+id/serialSendText"
+        android:layout_alignEnd="@+id/serialSendText"
+        android:layout_alignStart="@+id/serialSendText">
+
+        <requestFocus />
+    </EditText>
+
+    <Button
+        android:id="@+id/buttonSerialSend"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Send Data"
+        android:layout_above="@+id/serialSendText"
+        android:layout_alignParentEnd="true" />
+
+    <EditText
+        android:id="@+id/serialSendText"
+        android:layout_width="310dp"
+        android:layout_height="40dp"
+        android:background="#555555"
+        android:bufferType="editable"
+        android:ems="10"
+        android:inputType="text"
+        android:text="testing"
+        android:textColor="#999999"
+        android:textSize="20dip"
+        android:layout_below="@+id/buttonScan"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:id="@+id/buttonStop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Stop"
+        android:layout_toEndOf="@+id/buttonLeft"
+        android:layout_centerVertical="true"
+        android:layout_toStartOf="@+id/buttonSerialSend" />
+
+    <Button
+        android:id="@+id/buttonForward"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="    Forward    "
+        android:layout_below="@+id/serialReceivedText"
+        android:layout_marginTop="35dp"
+        android:layout_toStartOf="@+id/buttonRight" />
+
+    <Button
+        android:id="@+id/buttonLeft"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="&lt; &lt;"
+        android:layout_toStartOf="@+id/buttonForward"
+        android:layout_alignBaseline="@+id/buttonStop"
+        android:layout_alignBottom="@+id/buttonStop" />
+
+    <Button
+        android:id="@+id/buttonRight"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="&gt; &gt;"
+        android:layout_alignTop="@+id/buttonStop"
+        android:layout_alignStart="@+id/buttonByRotationSensor" />
+
+    <Button
+        android:id="@+id/buttonBack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Backwards"
+        android:layout_toStartOf="@+id/buttonRight"
+        android:layout_toEndOf="@+id/buttonLeft"
+        android:layout_marginTop="15dp"
+        android:layout_below="@+id/buttonStop"
+        android:layout_alignStart="@+id/buttonForward" />
+
+    <Button
+        android:id="@+id/buttonByRotationSensor"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="By Sensor"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true" />
+
+</RelativeLayout>
