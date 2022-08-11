@@ -10,15 +10,17 @@
     tools:context="com.example.sergei.sergei3.RotationSensorActivity">
 
     <TextView
-        android:text="@string/hello_world"
+        android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/textView" />
+        android:text="Balancer Control" />
 
     <EditText
         android:id="@+id/sensorText"
         android:layout_width="310dp"
         android:layout_height="40dp"
+        android:layout_below="@+id/textView"
+        android:layout_alignParentStart="true"
         android:layout_marginTop="26dp"
         android:background="#555555"
         android:bufferType="editable"
@@ -26,19 +28,22 @@
         android:inputType="text"
         android:text="...sensor data..."
         android:textColor="#999999"
-        android:textSize="20dip"
-        android:layout_below="@+id/textView"
-        android:layout_alignParentStart="true" />
+        android:textSize="20dip" />
 
-    <View android:layout_width="150dp"
+    <View
         android:id="@+id/reticle"
-        android:layout_height="150dp"
-        android:background="@drawable/reticle"/>
+        android:layout_width="116dp"
+        android:layout_height="113dp"
+        android:layout_centerInParent="true"
+        android:background="@drawable/reticle" />
 
-    <View android:layout_width="50dp"
+    <View
         android:id="@+id/centerBubble"
+        android:layout_width="50dp"
         android:layout_height="50dp"
-        android:background="@drawable/circle"/>
+        android:layout_centerInParent="true"
+        android:layout_centerHorizontal="true"
+        android:background="@drawable/circle" />
 
     <Button
         android:id="@+id/buttonScan"

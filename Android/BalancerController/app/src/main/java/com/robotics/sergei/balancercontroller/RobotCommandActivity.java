@@ -1,13 +1,10 @@
 package com.robotics.sergei.balancercontroller;
 
-import android.content.Context;
 import android.content.Intent;
-import android.hardware.SensorEventListener;
-import android.os.Bundle;
 import android.os.PowerManager;
-import android.view.View;
+import android.content.Context;
+import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.EditText;
 
 import com.trackroamer.arduinocomm.ToArduino;
 
@@ -29,16 +26,15 @@ public class RobotCommandActivity extends BlunoLibrary
 
         serialBegin(115200);													// set the Uart Baudrate on BLE chip to 115200
 
-        buttonScan = (Button) findViewById(R.id.buttonScan);					// initial the button for scanning the BLE device
-        buttonScan.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                buttonScanOnClickProcess();										// Alert Dialog for selecting the BLE device
-            }
+        buttonScan = findViewById(R.id.buttonScan);					// initial the button for scanning the BLE device
+        buttonScan.setOnClickListener(v -> {
+            buttonScanOnClickProcess();										// Alert Dialog for selecting the BLE device
         });
 
+        //getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        this.mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "My Tag");
+        this.mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "BalancerControllerTag");
         this.mWakeLock.acquire();
     }
 
@@ -120,20 +116,20 @@ public class RobotCommandActivity extends BlunoLibrary
 
         String toSend = cmd.toString();
 
-        System.out.println("DriveStopCommand: '" + toSend + "'");
+        //System.out.println("DriveStopCommand: '" + toSend + "'");
 
         serialSend(toSend);
     }
-    protected void DriveMoveCommand(int inputX, int inputY)
+    protected void DriveMoveCommand(int turn, int speed)
     {
         ToArduino cmd = new ToArduino();
         cmd.channel = CHANNEL_DRIVE;
         cmd.command = CMD_DRIVE_MOVE;
-        cmd.commandValues = new int[] { inputX, inputY };
+        cmd.commandValues = new int[] { turn, speed };
 
         String toSend = cmd.toString();
 
-        System.out.println("DriveMoveCommand: '" + toSend + "'");
+        //System.out.println("DriveMoveCommand: '" + toSend + "'");
 
         serialSend(toSend);
     }

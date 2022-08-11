@@ -62,8 +62,8 @@ public class RotationSensorActivity extends RobotCommandActivity
     private float reticleRadius = 0.0f;
     private float screenCenterX = 0.0f;
     private float screenCenterY = 0.0f;
-    private float bubbleFactorX = 50.0f;
-    private float bubbleFactorY = 80.0f;
+    private float bubbleFactorX = 40.0f;    // ratio between screenX and sensorX
+    private float bubbleFactorY = 70.0f;
 
 //    @Override
 //    public void onLoad()
@@ -93,58 +93,65 @@ public class RotationSensorActivity extends RobotCommandActivity
         if(millis - millisLast > 20)
         {
             millisLast = millis;
+
+            // values in range: -9.3..9.3
             float sensorX = -event.values[0];
             float sensorY = event.values[1];
 
             //sensorText.setText("" + sensorX + "      " + sensorY + "    " + reticleRadius);
+            //sensorText.setText("X: " + sensorX + " Y: " + sensorY);
 
-            //sensorText.setText("" + sensorX + "      " + sensorY);
-
+            // bubble deflection from center:
             float deltaX = sensorX * bubbleFactorX;
             float deltaY = sensorY * bubbleFactorY;
 
             float bubbleX = screenCenterX + deltaX;
             float bubbleY = screenCenterY + deltaY;
 
+            // move the bubble on screen:
             centerBubbleView.setX(bubbleX);
             centerBubbleView.setY(bubbleY);
 
             if(millis - millisLastSent > 100) {
                 millisLastSent = millis;
 
-                double vectorLength = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                double outsideReticle = vectorLength - reticleRadius;
+                // bubble vector and its part outside reticle:
+                double vectorLength = Math.min(450f, Math.sqrt(deltaX * deltaX + deltaY * deltaY));
+                double outsideReticle = Math.min(250f, Math.max(vectorLength - reticleRadius, -0.1f));
 
-                sensorText.setText("" + vectorLength + "      " + outsideReticle);
+                if (!this.mConnected) {
+                    sensorText.setText(" Length: " + java.lang.Math.round(vectorLength) + "   Outside: " + java.lang.Math.round(outsideReticle));
+                } else {
 
-                if (this.mConnected) {
-
-                    if ( outsideReticle < 0.0 ) {
+                    if ( outsideReticle < 0.0f ) {
                         //serialSend("s");                //send the data to the BLUNO
+                        sensorText.setText("Stop");
                         DriveStopCommand();
                     } else {
-                        float inputFactorTurn = 0.1f;
-                        float inputFactorSpeed = 0.2f;
+                        float sensorXDeadZone = 2.0f;
+                        float sensorYDeadZone = 2.0f;
 
-                        int turn = (int) (sensorX * inputFactorTurn * outsideReticle);
-                        int speed = (int) (sensorY * inputFactorSpeed * outsideReticle);
+                        // factors to cover the range -100...100:
+                        float sensorFactorTurn = 100.0f / (9.3f - sensorXDeadZone);
+                        float sensorFactorSpeed = -100.0f / (9.3f - sensorYDeadZone);
 
-                        sensorText.setText("" + turn + "      " + speed + "    " + ((int)reticleRadius));
+                        if(Math.abs(sensorX) > sensorXDeadZone)
+                            sensorX = sensorX > 0 ? sensorX - sensorXDeadZone : sensorX + sensorXDeadZone;
+                        else
+                            sensorX = 0.0f;
+
+                        if(Math.abs(sensorY) > sensorYDeadZone)
+                            sensorY = sensorY > 0 ? sensorY - sensorYDeadZone : sensorY + sensorYDeadZone;
+                        else
+                            sensorY = 0.0f;
+
+                        int turn = (int) Math.min(100.0, Math.max(-100.0, Math.round(sensorX * sensorFactorTurn)));
+                        int speed = (int) Math.min(100.0, Math.max(-100.0, Math.round(sensorY * sensorFactorSpeed)));
+
+                        sensorText.setText(" Turn: " + turn + "  Speed: " + speed);
 
                         DriveMoveCommand(turn, speed);
                     }
-
-                    /*
-                    } else if (inputY > reticleRadiusInt) {
-                        serialSend("a");
-                    } else if (inputY < -reticleRadiusInt) {
-                        serialSend("b");
-                    } else if (inputX > reticleRadiusInt) {
-                        serialSend("r");
-                    } else if (inputX < -reticleRadiusInt) {
-                        serialSend("l");
-                    }
-                    */
                 }
             }
         }

@@ -22,11 +22,11 @@
         android:id="@+id/serialReceivedText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:ems="10"
-        android:inputType="textMultiLine"
         android:layout_below="@+id/serialSendText"
+        android:layout_alignStart="@+id/serialSendText"
         android:layout_alignEnd="@+id/serialSendText"
-        android:layout_alignStart="@+id/serialSendText">
+        android:ems="10"
+        android:inputType="textMultiLine">
 
         <requestFocus />
     </EditText>
@@ -43,61 +43,71 @@
         android:id="@+id/serialSendText"
         android:layout_width="310dp"
         android:layout_height="40dp"
+        android:layout_below="@+id/buttonScan"
+        android:layout_centerHorizontal="true"
         android:background="#555555"
         android:bufferType="editable"
         android:ems="10"
         android:inputType="text"
-        android:text="testing"
+        android:text="enter text here"
         android:textColor="#999999"
-        android:textSize="20dip"
-        android:layout_below="@+id/buttonScan"
-        android:layout_centerHorizontal="true" />
+        android:textSize="20dip" />
 
     <Button
         android:id="@+id/buttonStop"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Stop"
-        android:layout_toEndOf="@+id/buttonLeft"
         android:layout_centerVertical="true"
-        android:layout_toStartOf="@+id/buttonSerialSend" />
+        android:layout_toStartOf="@+id/buttonSerialSend"
+        android:layout_toEndOf="@+id/buttonLeft"
+        android:minHeight="100dip"
+        android:text="Stop" />
 
     <Button
         android:id="@+id/buttonForward"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="    Forward    "
+        android:layout_above="@id/buttonStop"
         android:layout_below="@+id/serialReceivedText"
-        android:layout_marginTop="35dp"
-        android:layout_toStartOf="@+id/buttonRight" />
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="15dp"
+        android:layout_toStartOf="@+id/buttonRight"
+        android:minHeight="100dip"
+        android:text="    Forward    " />
 
     <Button
         android:id="@+id/buttonLeft"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="&lt; &lt;"
-        android:layout_toStartOf="@+id/buttonForward"
         android:layout_alignBaseline="@+id/buttonStop"
-        android:layout_alignBottom="@+id/buttonStop" />
+        android:layout_alignBottom="@+id/buttonStop"
+        android:layout_alignParentLeft="true"
+        android:layout_toStartOf="@+id/buttonForward"
+        android:minHeight="100dip"
+        android:text="&lt; &lt;" />
 
     <Button
         android:id="@+id/buttonRight"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="&gt; &gt;"
+        android:layout_alignStart="@+id/buttonByRotationSensor"
         android:layout_alignTop="@+id/buttonStop"
-        android:layout_alignStart="@+id/buttonByRotationSensor" />
+        android:layout_alignParentRight="true"
+        android:minHeight="100dip"
+        android:text="&gt; &gt;" />
 
     <Button
         android:id="@+id/buttonBack"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Backwards"
+        android:layout_below="@+id/buttonStop"
+        android:layout_alignStart="@+id/buttonForward"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="15dp"
         android:layout_toStartOf="@+id/buttonRight"
         android:layout_toEndOf="@+id/buttonLeft"
-        android:layout_marginTop="15dp"
-        android:layout_below="@+id/buttonStop"
-        android:layout_alignStart="@+id/buttonForward" />
+        android:text="Backwards" />
 
     <Button
         android:id="@+id/buttonByRotationSensor"
