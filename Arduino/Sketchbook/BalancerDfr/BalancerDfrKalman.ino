@@ -1,17 +1,13 @@
-// **************************
+// ********************************************
 // Calculate the Angle
 // Takes acceleration, GyroY, dt
-// Calls Kalman to calculate angle, angle_dot
-// **************************
-boolean Angle_calculate(void)
+// Calls Kalman to calculate pitch, pitch_dot
+// ********************************************
+boolean calculatePitch(void)
 {
   boolean ret = true;
   
-  //if(acceleration > 0.8 || acceleration < -0.8)
-  //{
-  //  return false;  // can't calculate angles around 90 degrees (robot fell down, or accelerated too much)
-  //}
-  
+  // can't calculate angles around 90 degrees (robot fell down, or accelerated too much):
   if(acceleration > 0.8)
   {
     acceleration = 0.8;
@@ -22,53 +18,55 @@ boolean Angle_calculate(void)
     acceleration = -0.8;
     ret = false;
   }
+
+  pitchByAccel = asin(acceleration / 0.98) * 57.3;  // degrees
   
-  double angleByAccel = asin(acceleration / 0.98) * 57.3;
+  float pitch_dot_tmp = GyroY / 14.375;       // the angular velocity for this specific gyro
   
-  theta = angleByAccel - angle_setpoint_remote;
-  
-  double angle_dot_tmp = GyroY / 14.375;       // the angular velocity for this specific gyro
-  
-  Kalman_Filter(theta, angle_dot_tmp);         // calculates global variables: angle, angle_dot
-  
+  Kalman_Filter(pitchByAccel + pitchAdjust, pitch_dot_tmp);         // calculates global variables: pitch, pitch_dot
+
   return ret;  // returns success flag
 }
 
-//*--------- Kalman filter implementation ------------------*/
+// --------- Kalman filter implementation ------------------
 
 // local persistent variables:
-static const double C_0 = 1;
+static const float C_0 = 1;
 
-static const double Q_angle = 0.001,
+static const float Q_angle = 0.001,
                     Q_gyro  = 0.003,
                     R_angle = 0.5,
-                    dt      = 0.005;  // see STD_LOOP_TIME
+                    dt      = FAST_LOOP_TIME / 1000.0;
                     
-double P[2][2] = {{ 1, 0 },
+float P[2][2] = {{ 1, 0 },
                   { 0, 1 }};
   
-double Pdot[4] ={ 0, 0, 0, 0 };
+float Pdot[4] ={ 0, 0, 0, 0 };
 
-double q_bias,
-       angle_err,
-       PCt_0,
-       PCt_1,
-       E,
-       K_0,
-       K_1,
-       t_0, 
-       t_1;
+float q_bias = 0.0,
+      angle_err = 0.0,
+      PCt_0 = 0.0,
+      PCt_1 = 0.0,
+      E = 0.0,
+      K_0 = 0.0,
+      K_1 = 0.0,
+      t_0 = 0.0, 
+      t_1 = 0.0;
 
 
-// **************************
+// ************************************************************
 //       Kalman Filter
-// **************************
+//
+//  takes accelerometer angle and rotation from gyro
+//  calculates "estimated" global variables: pitch, pitch_dot
+//
+// ************************************************************
 
-void Kalman_Filter(double angle_m, double gyro_m)   
+void Kalman_Filter(float angle_m, float gyro_m)   
 {
-  angle += (gyro_m - q_bias) * dt;    // global variable
+  pitch += (gyro_m - q_bias) * dt;    // global variable
   
-  angle_err = angle_m - angle;
+  angle_err = angle_m - pitch;
   Pdot[0] = Q_angle - P[0][1] - P[1][0];
   Pdot[1] = -P[1][1];
   Pdot[2] = -P[1][1];
@@ -90,8 +88,6 @@ void Kalman_Filter(double angle_m, double gyro_m)
   P[1][1] -= K_1 * t_1;
   q_bias += K_1 * angle_err;
   
-  angle += K_0 * angle_err;    // Optimal (estimated) angle, global variable
-  angle_dot = gyro_m - q_bias; // Optimal (estimated) angular velocity, global variable
+  pitch += K_0 * angle_err;    // Optimal (estimated) pitch, global variable
+  pitch_dot = gyro_m - q_bias; // Optimal (estimated) angular velocity, global variable
 }
-
-

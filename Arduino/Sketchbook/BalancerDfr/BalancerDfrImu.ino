@@ -24,6 +24,8 @@ void initImu()
   delay(100);
   initGyro();
   delay(100);
+  GyroCalibrate();
+  delay(100);
 }
 
 //
@@ -32,7 +34,6 @@ void initImu()
 void readFromImu()
 {
   AccelRead();
-  
   GyroRead();
 }
 
@@ -49,10 +50,9 @@ void AccelRead()
 {
   readFrom(DEVICE, regAddress, TO_READ, buff);   //read the acceleration data from the ADXL345
   
-  //x_value = (((int)buff[1]) << 8) | buff[0]; 
-  y_value = (((int)buff[3]) << 8) | buff[2]; 
-  //z_value = (((int)buff[5]) << 8) | buff[4]; 
-  acceleration = y_value / 267;     // current acceleration along Y-axis
+  AccelX = (((int)buff[1]) << 8) | buff[0]; 
+  AccelY = (((int)buff[3]) << 8) | buff[2]; 
+  AccelZ = (((int)buff[5]) << 8) | buff[4]; 
 }
 
 // **************************
@@ -132,3 +132,34 @@ void GyroRead()
   GyroTemp = (buff[0] << 8) | buff[1];         // temperature 
 }
 
+//---------------- I2C Functions --------------------------------------------------------------
+
+// Writes val to address register on device
+void writeTo(int device, byte address, byte val)
+{
+  Wire.beginTransmission(device); //start transmission to device 
+  Wire.write(address);        // send register address
+  Wire.write(val);        // send value to write
+  Wire.endTransmission(); //end transmission
+}
+
+//reads num bytes starting from address register on device in to buff array
+void readFrom(int device, byte address, int num, byte buff[])
+{
+  Wire.beginTransmission(device); //start transmission to device 
+  Wire.write(address);        //sends address to read from
+  Wire.endTransmission(); //end transmission
+
+    Wire.beginTransmission(device); //start transmission to device
+  Wire.requestFrom(device, num);    // request 6 bytes from device
+
+  int i = 0;
+  while(Wire.available())    //device may send less than requested (abnormal)
+  { 
+    buff[i] = Wire.read(); // receive a byte
+    i++;
+  }
+  Wire.endTransmission(); //end transmission
+}
+
+//-----------------------I2C Functions end---------------------------------------------------------

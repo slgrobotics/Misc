@@ -6,7 +6,7 @@
 // **************************
 //     Init the Encoders
 // **************************
-void EncodersInit()
+void initEncoders()
 {
   pinMode(2, INPUT);  // left, INT 0
   pinMode(8, INPUT);  // left
@@ -14,14 +14,14 @@ void EncodersInit()
   pinMode(3, INPUT);  // right, INT 1
   pinMode(9, INPUT);  // right
 
-  attachInterrupt(0, leftEncoder, CHANGE);   // int 0, pin 2  - left encoder interrupt
-  attachInterrupt(1, rightEncoder, CHANGE);  // int 1, pin 3  - right encoder interrupt
+  attachInterrupt(0, leftEncoderIsr, CHANGE);   // int 0, pin 2  - left encoder interrupt
+  attachInterrupt(1, rightEncoderIsr, CHANGE);  // int 1, pin 3  - right encoder interrupt
 }
 
 // ************************************
 //    Read distance from the encoders
 // ************************************
-void leftEncoder()
+void leftEncoderIsr()
 {
   // we spend around 10us in the interrupt, at approx 1kHz frequency at pwm=80
   //digitalWrite(10, HIGH);
@@ -40,7 +40,7 @@ void leftEncoder()
   //digitalWrite(10, LOW);
 }
 
-void rightEncoder()
+void rightEncoderIsr()
 {
   // we spend around 10us in the interrupt, at approx 1kHz frequency at pwm=80
   //digitalWrite(10, HIGH);
@@ -58,4 +58,3 @@ void rightEncoder()
   }
   //digitalWrite(10, LOW);
 }
-

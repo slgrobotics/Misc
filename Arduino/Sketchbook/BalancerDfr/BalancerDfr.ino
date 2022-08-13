@@ -1,40 +1,56 @@
+
+/*
+ * 
+ * This is an adaptation of the original 2013 DFRobot balancer sample code from
+ * 
+ *  https://www.dfrobot.com/index.php?route=product/product&filter_name=KIT0040&product_id=1043#.Uq1axWeA25P
+ * 
+ * Works on Arduino Uno with DFRobot motor/IMU shield (small Balancer)
+ * 
+ * repository at: https://github.com/slgrobotics/Misc/tree/master/Arduino/Sketchbook/BalancerDfr
+ * 
+ * Author: Sergei Grichine, August 2022
+ */
 #include <Wire.h>
-//#include <stdint.h> // Needed for uint8_t
+#include <SoftTimer.h>
 
 //-------------------------------------- Variable definitions ---------------------------------------------//
 
-double GyroX, GyroY, GyroZ, GyroTemp;  // raw variables delivered by the IMU
+// raw variables delivered by the IMU:
+float GyroX, GyroY, GyroZ, GyroTemp;
+float AccelX, AccelY, AccelZ;
 
-// variables calculated by the Kalman filter:
-double angle;      // Optimal (estimated) angle from the vertical, degrees, positive when tilting backwards
-double angle_dot;  // Optimal (estimated) angular velocity, positive when turning backwards
-
-double k1, k2, k3, k4;   // Adjustable PID Parameters
+float k1, k2, k3, k4;   // Adjustable PID Parameters
 
 // variables involved in calculating motor inputs:
-double acceleration;  // Acceleration in the conversion
-double theta;
-double y_value;       // y value of acceleration sensor
+float acceleration;  // current acceleration along Y-axis from IMU, 0.0 when vertical, <0 when tilted forward 
+float pitchByAccel;  // degrees, 0.0 when vertical, <0 when tilted forward
+const float pitchAdjust = 0.0;  // to offset pitch measurement passed to Kalman filter, degrees
+float target_pitch; // calculated by velocity PID, radians
 
-double turn_flag=0.0;
+// variables calculated by the Kalman filter:
+float pitch;      // Optimal (estimated) angle from the vertical, degrees, positive when tilting backwards
+float pitch_dot;  // Optimal (estimated) angular velocity, positive when turning backwards
+
+// comes from Android app - from serial via Bluetooth BLE-LINK:
+float throttle = 0.0;
+float steering=0.0;
 
 volatile int Ldistance, Rdistance; // encoders - distance traveled
 
 int pwm;
 int pwm_R, pwm_L;
-double range;
-double direction_error_all;
-double distance_per_cycle;
-double wheel_speed;
-double angle_setpoint_compensated = 0.0;  // degrees, positive when tilting backwards. Compensated for GC shifts under load.
-double angle_setpoint_remote = 0.0;
-double distance_setpoint_remote = 0.0;
+float range;
+float direction_error_all;
+float distance_per_cycle;
+float wheel_speed;
+float distance_setpoint_remote = 0.0;
 
 #define TiltChannel          0   // for Ema
 #define SpeedChannel         1
 
-double tiltEma = 0.0;
-double speedEma = 0.0;
+float tiltEma = 0.0;
+float speedEma = 0.0;
 
 // Analog pins connected to potentiometers to adjust k1...k4 :
 
@@ -51,6 +67,19 @@ const int M2 = 7;    // M2 Direction Control  (LeftMotorEN)
 
 #define buzzer 13 // Connected to a BC547 transistor - there is a protection diode at the buzzer as well
 
+#define FAST_LOOP_TIME   5  // Fixed time loop of 5 milliseconds, see Kalman filter
+
+// SoftTimer service routines and tasks:
+void taskReadAnalog(Task* me);
+void taskMainLoop(Task* me);
+void taskPrintTrace(Task* me);
+
+Task t1(100, taskReadAnalog);
+Task t2(FAST_LOOP_TIME, taskMainLoop);
+Task t3(1000, taskPrintTrace);
+
+const boolean doTRACE = false;
+
 //-------------------------------------- End of variable definitions -----------------------------------------//
 
 void setup()
@@ -60,16 +89,7 @@ void setup()
 
   initImu();
 
-  GyroCalibrate();
-  delay(100);
-
-  pinMode(M1, OUTPUT);
-  pinMode(E1, OUTPUT);
-  pinMode(M2, OUTPUT);
-  pinMode(E2, OUTPUT);
-
-  analogWrite(E1, 0);    // make sure motors are stopped
-  analogWrite(E2, 0);
+  initMotors();
 
   // DEBUG pins:
   pinMode(10, OUTPUT);
@@ -95,53 +115,37 @@ void setup()
   setEmaPeriod(TiltChannel, 100);
   setEmaPeriod(SpeedChannel, 100);
 
-  EncodersInit();	// Initialize the encoders
+  initEncoders();	// Initialize the encoders
+
+  initRemote();
   
   pinMode(buzzer, OUTPUT);
   shortBuzz();
+  
+  SoftTimer.add(&t1);
+  SoftTimer.add(&t2);
+  if(doTRACE)
+  {
+    SoftTimer.add(&t3);
+  }
 }
 
-// =========================== main loop timing ============================================
-#define STD_LOOP_TIME 5000 // Fixed time loop of 5 milliseconds
-unsigned long lastLoopUsefulTime = STD_LOOP_TIME;  // see Kalman dt
-unsigned long loopStartTime;
 int loopCnt = 0;
-
-const int slowLoopFactor = 200;
-int slowLoopCnt = slowLoopFactor;    // should fire on first loop to read k* values
 const int pidLoopFactor = 4;
-boolean doTRACE = true;
-// =========================================================================================
 
-void loop()
+void taskMainLoop(Task* me)
 {
-  loopStartTime = micros(); 
-
   //digitalWrite(11, HIGH);
 
-  if(slowLoopCnt++ >= slowLoopFactor)
-  {
-    slowLoopCnt = 0;
-
-    // multipliers to have the experimental values when POTs are in neutral position:
-    k1 = analogRead(AD0pin) * 0.03;
-    k2 = analogRead(AD1pin) * 0.005;
-    k3 = analogRead(AD2pin) * 0.0009; // * 0.0003;
-    k4 = analogRead(AD3pin) * 0.0015; //* 0.0002;
-
-    if(doTRACE)
-    {
-      printAll();
-    }
-  }
-
-  control();
+  remote();
 
   // we come here in 5us if no serial is available
 
   readFromImu();
 
-  if(Angle_calculate())  // must be on the fast loop to keep track of accel/gyro all the time
+  acceleration = AccelY / 267;     // current acceleration along Y-axis, in G's
+
+  if(calculatePitch())  // must be on the fast loop to keep track of accel/gyro all the time
   {
     // we come here at 3ms
 
@@ -153,35 +157,34 @@ void loop()
       //pwm_R = 80;
       //pwm_L = 80;
 
-      set_motor();  // takes 0.12ms
+      set_motors();  // takes 0.12ms
     }
   }
   else
   {
-    // angle outside limits - stop
+    // pitch outside limits - stop
     pwm_R = 0;
     pwm_L = 0;
 
-    set_motor();  // takes 0.12ms
+    set_motors();  // takes 0.12ms
   }
 
   // we are done in about 3.4ms
   //digitalWrite(11, LOW);
 
-  /* Wait here - use a time fixed loop */
-  lastLoopUsefulTime = micros() - loopStartTime;
-  if (lastLoopUsefulTime < STD_LOOP_TIME)
-  {
-    while((micros() - loopStartTime) < STD_LOOP_TIME)
-    {
-      //Usb.Task();
-      ;
-    }
-  }
   loopCnt++;
 }
 
-void printAll()
+void taskReadAnalog(Task* me)
+{
+  // multipliers to have the experimental values when POTs are in neutral position:
+  k1 = analogRead(AD0pin) * 0.03;
+  k2 = analogRead(AD1pin) * 0.005;
+  k3 = analogRead(AD2pin) * 0.0009; // * 0.0003;
+  k4 = analogRead(AD3pin) * 0.0015; //* 0.0002;
+}
+
+void taskPrintTrace(Task* me)
 {
   int Ldur = Ldistance;
   int Rdur = Rdistance;
@@ -208,12 +211,12 @@ void printAll()
 //
 //  Serial.print("Angle calculation:   acceleration=");
 //  Serial.print(acceleration);
-//  Serial.print("   theta=");
-//  Serial.print(theta);
-//  Serial.print("       After Kalman:   angle=");
-//  Serial.print(angle);
-//  Serial.print("   angle_dot=");
-//  Serial.println(angle_dot);
+//  Serial.print("   pitchByAccel=");
+//  Serial.print(pitchByAccel);
+//  Serial.print("       After Kalman:   pitch=");
+//  Serial.print(pitch);
+//  Serial.print("   pitch_dot=");
+//  Serial.println(pitch_dot);
 //
 //  Serial.print("pwm=");
 //  Serial.print(pwm);
@@ -230,19 +233,17 @@ void printAll()
 //  Serial.print("       Left Ldistance: ");
 //  Serial.println(Ldur);
 //
-  Serial.print("Control:  angle: ");
-  Serial.print(angle_setpoint_remote);
-  Serial.print("     turn: ");
-  Serial.println(turn_flag);
+  Serial.print("Remote:  throttle: ");
+  Serial.print(throttle);
+  Serial.print("     steering: ");
+  Serial.println(steering);
 
   Serial.print("Ema:  tilt: ");
   Serial.print(tiltEma);
   Serial.print("       speed: ");
   Serial.print(speedEma);
-  Serial.print("       angle: ");
-  Serial.print(angle);
-  Serial.print("       angle_setpoint_compensated: ");
-  Serial.println(angle_setpoint_compensated);
+  Serial.print("       pitch: ");
+  Serial.println(pitch);
 }
 
 void shortBuzz()

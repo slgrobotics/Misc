@@ -1,5 +1,11 @@
 // **************************
 // Remote control code
+//
+// takes chars from serial via Bluetooth BLE-LINK and
+// produces throttle and steering
+//
+// see https://github.com/slgrobotics/Misc/tree/master/Android/BalancerController
+//
 // **************************
 
 #define CHANNEL_IDENTIFY         0    // send back device ident string
@@ -11,8 +17,11 @@
 #define CMD_DRIVE_STOP           10
 #define CMD_DRIVE_MOVE           11
 
+void initRemote()
+{
+}
 
-void control()
+void remote()
 {
   if(Serial.available())  // takes 8us if false
   {
@@ -20,35 +29,40 @@ void control()
     val=Serial.read();
     switch (val)
     {
-    case 'a':             // forward
-        //shortBuzz();
-        if(angle_setpoint_remote > -8)         
+    case 'a':             // forward - letters a,b,s,r,l - when using form activity in Android app
+        Serial.print((char)val);
+        shortBuzz();
+        if(throttle > -8)         
         { 
-          angle_setpoint_remote -= 1.0;
+          throttle -= 1.0;
         }
         break;
           
     case 'b':             // backwards
-        if(angle_setpoint_remote < 8)
+        Serial.print((char)val);
+        if(throttle < 8)
         { 
-          angle_setpoint_remote += 1.0;
+          throttle += 1.0;
         }
         break;
           
     case 's':             // stop
-        angle_setpoint_remote=0;
-        turn_flag=0;
+        Serial.println((char)val);
+        throttle=0;
+        steering=0;
         break;
       
     case 'r':             // right
-        turn_flag=1;      // positive angle
+        Serial.println((char)val);
+        steering=-1;
         break;
       
     case 'l':            // left
-        turn_flag=-1;    // negative angle
+        Serial.println((char)val);
+        steering=1;
         break;
       
-    case '*':            // ToArduino packet
+    case '*':            // ToArduino packet - when using "bubble" activity in Android app
         {
           //shortBuzz();
 
@@ -114,6 +128,8 @@ void control()
         break;
       
     default:
+        Serial.print((char)val);
+        Serial.println(" - ??");
         break;      
     }
   }
@@ -140,35 +156,22 @@ void controlAction(int channel, int command, int nValues, int* cmdValues)
             switch(command)
             {
               case CMD_DRIVE_STOP:
-                angle_setpoint_remote=0;
-                turn_flag=0;
+                throttle=0;
+                steering=0;
                 break;
                 
               case CMD_DRIVE_MOVE:
                 {
                   //shortBuzz();
                   //Serial.println("*ARD COMM OK");
-                  double speed = (double)constrain(cmdValues[1], -700, 700);
-                  double turn = (double)constrain(cmdValues[0], -250, 250);
+                  throttle = (float)constrain(cmdValues[1], -100, 100);
+                  steering = (float)constrain(cmdValues[0], -100, 100);
 /*
     Serial.print(":");
-    Serial.print(speed);
+    Serial.print(throttle);
     Serial.print(" ");
-    Serial.print(turn);
-*/                  
-                  //if(speed * speed + turn * turn > 65000.0f)
-                  {
-                    /*
-                    if(angle_setpoint_remote > -4.0 && angle_setpoint_remote < 4.0)         
-                    { 
-                      angle_setpoint_remote += speed / 30.0;
-                    }
-                    */
-                    
-                    angle_setpoint_remote = speed / 100.0;
-                    
-                    turn_flag = turn / 200.0;
-                  }
+    Serial.print(steering);
+*/
                 }
                 break;
                 

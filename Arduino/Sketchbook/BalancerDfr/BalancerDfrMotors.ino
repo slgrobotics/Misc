@@ -1,10 +1,21 @@
 
 #define DEADZONE 20
 
+void initMotors()
+{
+  pinMode(M1, OUTPUT);
+  pinMode(E1, OUTPUT);
+  pinMode(M2, OUTPUT);
+  pinMode(E2, OUTPUT);
+
+  analogWrite(E1, 0);    // make sure motors are stopped
+  analogWrite(E2, 0);
+}
+
 // ***********************************************************************
 //   Set motor power for both motors. Positive is forward. Takes 0.12ms
 // ***********************************************************************
-void set_motor()
+void set_motors()
 {
   if(pwm_R > 255)      // Maximum / Minimum Limitations
     pwm_R = 255;
@@ -70,5 +81,3 @@ void set_motor()
      analogWrite(E2, -pwm_L);
   }
 }
-
-
