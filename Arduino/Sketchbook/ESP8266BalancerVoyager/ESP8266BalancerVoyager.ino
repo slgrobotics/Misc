@@ -7,7 +7,7 @@
  * adapted 07/2022 for ESP8266 NodeMCU - Sergei Grichine
  * tested on a hoverboard with RioRand 400W BLDC controllers
  * 
- * repository at: https://github.com/slgrobotics/Misc/tree/master/Arduino/Sketchbook
+ * repository at: https://github.com/slgrobotics/Misc/tree/master/Arduino/Sketchbook/ESP8266BalancerVoyager
  * 
  * copy rights no more restrictive than the code cited above as follows:
  * 
@@ -33,6 +33,7 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
  * 
+ * Author: Sergei Grichine, August 2022
  */
 
 #include "imu_helpers.h"
@@ -87,6 +88,8 @@ const int latchPin = D0;  // Latch pin 12 of 74HC595
 const int clockPin = D3;  // Clock pin 11 of 74HC595
 const int dataPin = SD3;  // Data pin 14 of 74HC595
 
+float pitch;      // Optimal (estimated) angle from the vertical, degrees, positive when tilting backwards
+
 // control algorithm parameters
 // stabilization PID:
 PIDController pid_stb{.P = 30, .I = 100, .D = 1, .ramp = 100000, .limit = 7};
@@ -101,22 +104,20 @@ LowPassFilter lpf_throttle{.Tf = 0.5};
 LowPassFilter lpf_steering{.Tf = 0.1};
 
 // Bluetooth app variables
-float steering = 0;
-float throttle = 0;
+float steering = 0.0; // -100..100
+float throttle = 0.0; // -100..100
 const float max_throttle = 20; // 20 rad/s
 const float max_steering = 1;  // 1 V
 int state = 1; // 1 on / 0 off
 
-float motor1_shaft_velocity = 0.0;
-float motor2_shaft_velocity = 0.0;
+// measured by encoders:
+float motorR_shaft_velocity = 0.0;
+float motorL_shaft_velocity = 0.0;
 
-// encoders - distance traveled:
-volatile int Rdistance = 0;
-volatile int Ldistance = 0; 
-
+// Wheels torque, expressed by PWM -255..255:
 float pwm_R = 0.0;
 float pwm_L = 0.0;
-float pwmFactor = 30.0; // amplify PID output -7..7 to turn it to PWM -255..255
+const float pwmFactor = 30.0; // amplify PID output -7..7 to turn it to PWM -255..255
 
 // motor pins - PWM and Direction:
 // we command PWM directly, and dir/stop/brake via shift register
@@ -135,6 +136,10 @@ const int buzzerBit = 7;      // small 5V buzzer
 // Encoder interrupt pins:
 const int rightEncoderPin = D6;
 const int leftEncoderPin = D5;
+
+float batteryVoltage = 0.0;   // measured by ADC
+
+const boolean doTRACE = true;
 
 void setup() 
 {
@@ -169,74 +174,144 @@ void setup()
   initRemote();
 }
 
+unsigned long lastMeasuredSpeed = 0;
+const int measureSpeedIntervalMs = 20;
+
 unsigned long lastPrintTime = 0;
 const int printIntervalMs = 1000;
+
 bool ledState = true;
 
 void loop() 
 {
+  remote();  // see if throttle and steering came from bluetooth (BLE-LINK) serial
+
+  unsigned long _now = millis();
+
   if(hasDataIMU()) // when IMU has received the package
   {
-    // read pitch from the IMU
-    float pitch = getPitchIMU();
+    // read pitch from the IMU, radians:
+    pitch = getPitchIMU();
 
     if(abs(pitch) > 0.6)
     {
       // tilted too much, stop
       pwm_R = pwm_L = 0;
+      set_motors();
+      return;
     }
 
-    remote();  // see if throttle and steering came from bluetooth (BLE-LINK) serial
-
     // calculate the target angle for throttle control
-    float target_pitch = lpf_pitch_cmd(pid_vel((motor1_shaft_velocity + motor2_shaft_velocity) / 2 - lpf_throttle(throttle)));
+    float target_pitch = lpf_pitch_cmd(pid_vel((motorR_shaft_velocity + motorL_shaft_velocity) / 2 - lpf_throttle(throttle/50.0)));
     
     // calculate the target voltage
     float voltage_control = pid_stb(target_pitch - pitch);
     
     // filter steering
-    float steering_adj = lpf_steering(steering);
+    float steering_adj = lpf_steering(-steering/300.0);
     
     // set the target voltage value
     pwm_R = (voltage_control + steering_adj) * pwmFactor;
     pwm_L = (voltage_control - steering_adj) * pwmFactor;
 
-    if(millis() - lastPrintTime >= printIntervalMs)
+    set_motors();
+  }
+
+  if(_now - lastMeasuredSpeed >= measureSpeedIntervalMs)
+  {
+    lastMeasuredSpeed = _now;
+    measureSpeed();
+  }
+
+  if(_now - lastPrintTime >= printIntervalMs)
+  {
+    lastPrintTime = _now;
+
+    ledState = !ledState;
+    shift.writeBit(testBit, ledState ? HIGH : LOW);
+
+    batteryVoltage = getBatteryVoltage();
+
+    if(batteryVoltage > 1.0)  //  // Battery main switch could be off, and we are on USB power
     {
-      lastPrintTime = millis();
-
-      ledState = !ledState;
-      shift.writeBit(testBit, ledState ? HIGH : LOW);
-
-      float voltage = getBatteryVoltage();
-
-      if(voltage < 37.0)
+      if(batteryVoltage < 37.0)
       {
         shortBuzz();
         Serial.print("Error: Battery voltage too low: ");
-        Serial.println(voltage);
+        Serial.println(batteryVoltage);
       }
-
-      Serial.print("Pitch: ");
-      Serial.print(pitch);
-      Serial.print("     pwm  R: ");
-      Serial.print(pwm_R);
-      Serial.print("   L: ");
-      Serial.print(pwm_L);
-      Serial.print("     Encoders:  R: ");
-      Serial.print(Rdistance);
-      Serial.print("   L: ");
-      Serial.print(Ldistance);
-      Serial.print("   Voltage: ");
-      Serial.print(voltage);
-      Serial.print("   throttle: ");
-      Serial.print(throttle);
-      Serial.print("   steering: ");
-      Serial.println(steering);
     }
 
-    set_motors();
+    if(doTRACE)
+    {
+      printAll();
+    }
   }
+}
+
+// Wheels velocity filtering:
+LowPassFilter lpf_vel_R{.Tf = 0.040};
+LowPassFilter lpf_vel_L{.Tf = 0.040};
+
+const float clicksPerTurn = 96.0;  // encoder clicks per one wheel rotation
+long lastMeasureRun = 0;
+
+// encoders - distance traveled:
+volatile int Rdistance = 0;
+volatile int Ldistance = 0; 
+
+int Rdistance_prev = 0;
+int Ldistance_prev = 0; 
+
+void measureSpeed()
+{
+  long t_current = millis();
+
+  if(lastMeasureRun == 0)
+  {
+    lastMeasureRun = t_current;
+    return;
+  }
+
+  float t_elapsed = (t_current - lastMeasureRun) / 1000.0;  // seconds
+  lastMeasureRun = t_current;
+  
+  // scale encoder clicks to rad/sec. 96 clicks per 1 turn, task runs at 20ms
+  float factor = M_PI / clicksPerTurn / t_elapsed;
+  
+  motorR_shaft_velocity = lpf_vel_R(Rdistance - Rdistance_prev) * factor; // radians per second
+  motorL_shaft_velocity = lpf_vel_L(Ldistance - Ldistance_prev) * factor;
+
+  Rdistance_prev = Rdistance = 0;   // avoid int overfill
+  Ldistance_prev = Ldistance = 0;
+
+  // For PID adjustments, set velocities to 0:
+  //motorR_shaft_velocity = 0.0;
+  //motorL_shaft_velocity = 0.0;
+}
+
+void printAll()
+{
+    Serial.print("Pitch: ");
+    Serial.print(pitch);
+    Serial.print("     pwm  R: ");
+    Serial.print(pwm_R);
+    Serial.print("   L: ");
+    Serial.print(pwm_L);
+    Serial.print("     Encoders:  R: ");
+    Serial.print(Rdistance);
+    Serial.print("   L: ");
+    Serial.print(Ldistance);
+    Serial.print("     Velocity:  R: ");
+    Serial.print(motorR_shaft_velocity);
+    Serial.print("   L: ");
+    Serial.print(motorL_shaft_velocity);
+    Serial.print("   Voltage: ");
+    Serial.print(batteryVoltage);
+    Serial.print("   throttle: ");
+    Serial.print(throttle);
+    Serial.print("   steering: ");
+    Serial.println(steering);
 }
 
 float getBatteryVoltage()
