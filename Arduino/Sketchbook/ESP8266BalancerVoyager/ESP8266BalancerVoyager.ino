@@ -92,9 +92,11 @@ float pitch;      // Optimal (estimated) angle from the vertical, degrees, posit
 
 // control algorithm parameters
 // stabilization PID:
-PIDController pid_stb{.P = 30, .I = 100, .D = 1, .ramp = 100000, .limit = 7};
+//PIDController pid_stb{.P = 30, .I = 100, .D = 1, .ramp = 100000, .limit = 7};   // original
+PIDController pid_stb{.P = 30, .I = 100, .D = 1.2, .ramp = 100000, .limit = 7};
 // velocity PID:
-PIDController pid_vel{.P = 0.01, .I = 0.03, .D = 0, .ramp = 10000, .limit = M_PI / 10};
+//PIDController pid_vel{.P = 0.01, .I = 0.03, .D = 0, .ramp = 10000, .limit = M_PI / 10};   // original
+PIDController pid_vel{.P = 0.01, .I = 0.03, .D = 0.0003, .ramp = 10000, .limit = M_PI / 10};
 
 // velocity control filtering:
 LowPassFilter lpf_pitch_cmd{.Tf = 0.07};
@@ -139,7 +141,7 @@ const int leftEncoderPin = D5;
 
 float batteryVoltage = 0.0;   // measured by ADC
 
-const boolean doTRACE = true;
+const boolean doTRACE = false;
 
 void setup() 
 {
@@ -201,8 +203,9 @@ void loop()
       return;
     }
 
-    // calculate the target angle for throttle control
+    // calculate the target angle for throttle control - set it to 0 when tuning stabilizing PID:
     float target_pitch = lpf_pitch_cmd(pid_vel((motorR_shaft_velocity + motorL_shaft_velocity) / 2 - lpf_throttle(throttle/50.0)));
+    //float target_pitch = 0.0;
     
     // calculate the target voltage
     float voltage_control = pid_stb(target_pitch - pitch);
@@ -210,7 +213,7 @@ void loop()
     // filter steering
     float steering_adj = lpf_steering(-steering/300.0);
     
-    // set the target voltage value
+    // set the target voltage (torque) values:
     pwm_R = (voltage_control + steering_adj) * pwmFactor;
     pwm_L = (voltage_control - steering_adj) * pwmFactor;
 
