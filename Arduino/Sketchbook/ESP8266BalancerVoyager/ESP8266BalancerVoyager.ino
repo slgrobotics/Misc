@@ -141,6 +141,19 @@ const int leftEncoderPin = D5;
 
 float batteryVoltage = 0.0;   // measured by ADC
 
+#include <SoftTimer.h>
+
+// SoftTimer service routines and tasks:
+void taskMeasureSpeed(Task* me);
+void taskMainLoop(Task* me);
+void taskMeasureBattery(Task* me);
+void taskPrintTrace(Task* me);
+
+Task t1(20, taskMeasureSpeed);
+Task t2(1, taskMainLoop);
+Task t3(1000, taskMeasureBattery);
+Task t4(1000, taskPrintTrace);
+
 const boolean doTRACE = false;
 
 void setup() 
@@ -174,21 +187,23 @@ void setup()
   initEncoders();
 
   initRemote();
+
+  t2.periodMicros = 1; // a trick to have task called every time in the loop, see Task.h and Task.cpp
+  
+  SoftTimer.add(&t1);
+  SoftTimer.add(&t2);
+  SoftTimer.add(&t3);
+  if(doTRACE)
+  {
+    SoftTimer.add(&t4);
+  }
 }
-
-unsigned long lastMeasuredSpeed = 0;
-const int measureSpeedIntervalMs = 20;
-
-unsigned long lastPrintTime = 0;
-const int printIntervalMs = 1000;
 
 bool ledState = true;
 
-void loop() 
+void taskMainLoop(Task* me)
 {
   remote();  // see if throttle and steering came from bluetooth (BLE-LINK) serial
-
-  unsigned long _now = millis();
 
   if(hasDataIMU()) // when IMU has received the package
   {
@@ -219,37 +234,6 @@ void loop()
 
     set_motors();
   }
-
-  if(_now - lastMeasuredSpeed >= measureSpeedIntervalMs)
-  {
-    lastMeasuredSpeed = _now;
-    measureSpeed();
-  }
-
-  if(_now - lastPrintTime >= printIntervalMs)
-  {
-    lastPrintTime = _now;
-
-    ledState = !ledState;
-    shift.writeBit(testBit, ledState ? HIGH : LOW);
-
-    batteryVoltage = getBatteryVoltage();
-
-    if(batteryVoltage > 1.0)  //  // Battery main switch could be off, and we are on USB power
-    {
-      if(batteryVoltage < 37.0)
-      {
-        shortBuzz();
-        Serial.print("Error: Battery voltage too low: ");
-        Serial.println(batteryVoltage);
-      }
-    }
-
-    if(doTRACE)
-    {
-      printAll();
-    }
-  }
 }
 
 // Wheels velocity filtering:
@@ -266,7 +250,7 @@ volatile int Ldistance = 0;
 int Rdistance_prev = 0;
 int Ldistance_prev = 0; 
 
-void measureSpeed()
+void taskMeasureSpeed(Task* me)
 {
   long t_current = millis();
 
@@ -293,28 +277,47 @@ void measureSpeed()
   //motorL_shaft_velocity = 0.0;
 }
 
-void printAll()
+void taskPrintTrace(Task* me)
 {
-    Serial.print("Pitch: ");
-    Serial.print(pitch);
-    Serial.print("     pwm  R: ");
-    Serial.print(pwm_R);
-    Serial.print("   L: ");
-    Serial.print(pwm_L);
-    Serial.print("     Encoders:  R: ");
-    Serial.print(Rdistance);
-    Serial.print("   L: ");
-    Serial.print(Ldistance);
-    Serial.print("     Velocity:  R: ");
-    Serial.print(motorR_shaft_velocity);
-    Serial.print("   L: ");
-    Serial.print(motorL_shaft_velocity);
-    Serial.print("   Voltage: ");
-    Serial.print(batteryVoltage);
-    Serial.print("   throttle: ");
-    Serial.print(throttle);
-    Serial.print("   steering: ");
-    Serial.println(steering);
+  ledState = !ledState;
+  shift.writeBit(testBit, ledState ? HIGH : LOW);
+
+  Serial.print("Pitch: ");
+  Serial.print(pitch);
+  Serial.print("     pwm  R: ");
+  Serial.print(pwm_R);
+  Serial.print("   L: ");
+  Serial.print(pwm_L);
+  Serial.print("     Encoders:  R: ");
+  Serial.print(Rdistance);
+  Serial.print("   L: ");
+  Serial.print(Ldistance);
+  Serial.print("     Velocity:  R: ");
+  Serial.print(motorR_shaft_velocity);
+  Serial.print("   L: ");
+  Serial.print(motorL_shaft_velocity);
+  Serial.print("   Voltage: ");
+  Serial.print(batteryVoltage);
+  Serial.print("   throttle: ");
+  Serial.print(throttle);
+  Serial.print("   steering: ");
+  Serial.println(steering);
+}
+
+void taskMeasureBattery(Task* me)
+{
+  batteryVoltage = getBatteryVoltage();
+
+  if(batteryVoltage < 1.0)
+  {
+    return; // Battery main switch is off, we are on USB power
+  }
+  else   if(batteryVoltage < 37.0)
+  {
+    shortBuzz();
+    Serial.print("Error: Battery voltage too low: ");
+    Serial.println(batteryVoltage);
+  }
 }
 
 float getBatteryVoltage()
