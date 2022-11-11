@@ -14,9 +14,31 @@ void setupRotationSensor()
 {
   mlx_1.attach(pinSS, pinSCK, pinMOSI);
   Serial.println("MLX90316 Rotary Position Sensor");
+  rs_setEmaPeriod(3);
 }
 
-int readRotationSensor()
+double readRotationSensor()
 { 
-  return mlx_1.readAngle();
+  return rs_ema((double)mlx_1.readAngle());
+}
+
+// variables to compute exponential moving average for rotation sensor:
+int rs_emaPeriod;
+double rs_valuePrev;
+double rs_multiplier;
+
+double rs_ema(double curVal)
+{
+  // smooth movement by using ema:
+  double emaVal = (rs_valuePrev < -1000000.0) ? curVal : ((curVal - rs_valuePrev) * rs_multiplier + rs_valuePrev);
+  //emaVal = curVal; // no ema
+  rs_valuePrev = emaVal;
+  return emaVal;
+}
+
+void rs_setEmaPeriod(int period)
+{
+  rs_valuePrev = -2000000.0;  // signal to use desiredSpeed directly for the first point
+  rs_emaPeriod = period;
+  rs_multiplier = 2.0 / (1.0 + (double)rs_emaPeriod);
 }

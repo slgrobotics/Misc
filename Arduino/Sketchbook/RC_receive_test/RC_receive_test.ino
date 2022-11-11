@@ -2,76 +2,100 @@
 // https://create.arduino.cc/projecthub/kelvineyeone/read-pwm-decode-rc-receiver-input-and-apply-fail-safe-6b90eb
 // https://github.com/NicoHood/PinChangeInterrupt
 
-#include "PinChangeInterrupt.h"
+#include <digitalWriteFast.h>
 
-// choose a valid PinChangeInterrupt pin of your Arduino board
-#define PCINT_PIN 6
+// choose a pair of valid interrupt pins of your Arduino board
+#define PCINT_PIN_LEFT 18
+#define PCINT_FUNCTION_LEFT rcPulseChange_LEFT
+#define PCINT_PIN_RIGHT 19
+#define PCINT_FUNCTION_RIGHT rcPulseChange_RIGHT
+
 #define PCINT_MODE CHANGE
-#define PCINT_FUNCTION rcPulseChange
 
 void setup()
 {
   setup_pwmRead();
   Serial.begin(115200);
+  pinMode(LED_BUILTIN, OUTPUT);
 }
 
-volatile int PW;                  // pulsewidth measurements
-volatile boolean prev_pinState;   // used to determine whether a pin has gone low-high or high-low
-volatile unsigned long pciTime;   // the time of the current pin change interrupt
-volatile unsigned long pwmTimer;  // to store the start time of each PWM pulse
+volatile int PW_LEFT;                      // pulse width measurements, microseconds
+volatile unsigned long lastRisingUs_LEFT;  // to store the start time of each PWM pulse
+volatile int PW_RIGHT;
+volatile unsigned long lastRisingUs_RIGHT;
 
-volatile boolean pwmFlag;         // flag whenever new data is available on each pin
-volatile boolean RC_data_rdy;     // flag when all RC receiver channels have received a new pulse
-unsigned long pwmPeriod;          // period, mirco sec, between two pulses on each pin
+volatile boolean RC_data_rdy_LEFT;         // flag when RC receiver channel have received a new pulse
+volatile boolean RC_data_rdy_RIGHT;
 
-void rcPulseChange()
+void rcPulseChange_LEFT()
 {
-  pciTime = micros();                                   // Record the time of the PIN change in microseconds
+  unsigned long pciTime = micros();        // Record the time of the PIN change in microseconds
 
-  uint8_t trigger = getPinChangeInterruptTrigger(digitalPinToPCINT(PCINT_PIN));
-  if (trigger == RISING)
+  //DbgLed(HIGH);
+
+  if (digitalReadFast(PCINT_PIN_LEFT))
   {
-    prev_pinState = 1;                                  // record pin state
-    pwmPeriod = pciTime - pwmTimer;                     // calculate the time period, micro sec, between the current and previous pulse
-    pwmTimer = pciTime;                                 // record the start time of the current pulse
+    lastRisingUs_LEFT = pciTime;           // record the start time of the current pulse
   }
-  else if (trigger == FALLING)
+  else
   {
-    prev_pinState = 0;                                  // record pin state
-    PW = pciTime - pwmTimer;                            // calculate the duration of the current pulse
-    pwmFlag = HIGH;                                     // flag that new data is available
-    RC_data_rdy = HIGH;
+    PW_LEFT = pciTime - lastRisingUs_LEFT; // calculate the duration of the current pulse
+    RC_data_rdy_LEFT = true;
+  }
+}
+
+void rcPulseChange_RIGHT()
+{
+  unsigned long pciTime = micros();        // Record the time of the PIN change in microseconds
+
+  //DbgLed(HIGH);
+
+  if (digitalReadFast(PCINT_PIN_RIGHT))
+  {
+    lastRisingUs_RIGHT = pciTime;           // record the start time of the current pulse
+  }
+  else
+  {
+    PW_RIGHT = pciTime - lastRisingUs_RIGHT; // calculate the duration of the current pulse
+    RC_data_rdy_RIGHT = true;
   }
 }
 
 void setup_pwmRead()
 {
   // set pins to input
-  pinMode(PCINT_PIN, INPUT);
-  //pinMode(LED_BUILTIN, OUTPUT);
-
-  // Attach the new PinChangeInterrupt and enable event function below
-  attachPCINT(digitalPinToPCINT(PCINT_PIN), rcPulseChange, CHANGE);
+  pinMode(PCINT_PIN_LEFT, INPUT_PULLUP);
+  pinMode(PCINT_PIN_RIGHT, INPUT_PULLUP);
+  
+  attachInterrupt(digitalPinToInterrupt(PCINT_PIN_LEFT), PCINT_FUNCTION_LEFT, PCINT_MODE);
+  attachInterrupt(digitalPinToInterrupt(PCINT_PIN_RIGHT), PCINT_FUNCTION_RIGHT, PCINT_MODE);
 }
 
 boolean RC_avail()
 {
-  boolean avail = RC_data_rdy;
-  RC_data_rdy = LOW;                          // reset the flag
+  // we assume that both channels are live more or less together,
+  // so there are no stale values
+  
+  boolean avail = RC_data_rdy_LEFT || RC_data_rdy_RIGHT;
+  RC_data_rdy_LEFT = RC_data_rdy_RIGHT = false; // reset the flags
   return avail;
 }
 
 void print_RCpwm()
 {                             
   // display the raw RC Channel PWM Inputs
-  Serial.println(PW);
+  Serial.print(PW_LEFT);
+  Serial.print("   ");
+  Serial.println(PW_RIGHT);
 }
 
 void loop()
 {
 
+  //DbgLed(HIGH);
+
   /*
-    int ch2 = pulseIn(6, HIGH, 25000);
+    int ch2 = pulseIn(PCINT_PIN_LEFT, HIGH, 25000);
     if(ch2 > 0)
     {
     Serial.println(ch2);
@@ -83,4 +107,9 @@ void loop()
   {
     print_RCpwm();
   }
+}
+
+void DbgLed(bool on)
+{
+  digitalWriteFast(LED_BUILTIN, on);
 }

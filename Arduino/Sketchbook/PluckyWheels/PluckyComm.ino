@@ -5,18 +5,28 @@
 //#define COMM_SIMPLE
 #define COMM_ELEMENT
 
+#define COMM_SERIAL Serial
+
+void InitSerial()
+{
+  Serial1.begin(57600); // connect GPS Leonardo shield uplink (pins 3 and 8) to pins 19 (RX) and 18 (TX)
+
+  //Serial.begin(115200);         // start serial for USB
+  COMM_SERIAL.begin(115200);  // start serial for Funduino Bluetooth XBee
+}
+
 #ifdef COMM_ELEMENT
 
-int j = 0; // sensor "randomizer" for debugging
+int j = 0; // sensor "randomizer" for srf04 sonar debugging/faking
 
 void readCommCommand()
 {
-  while (Serial.available())
+  while (COMM_SERIAL.available())
   {
-    String str = Serial.readStringUntil('\r');
+    String str = COMM_SERIAL.readStringUntil('\r');
     if (str == "reset")
     {
-      Serial.print("Arduino firmware Plucky Wheels\r\n>");  // code phrase, checked by C# side
+      COMM_SERIAL.print("Arduino firmware Plucky Wheels - COMM_ELEMENT\r\n>");  // code phrase, checked by C# side
       desiredSpeedR = 0;
       desiredSpeedL = 0;
       resetEma(RightMotorChannel);
@@ -54,29 +64,29 @@ void readCommCommand()
       if (!strcmp(tokens[0], "cfg"))
       {
         //Serial.println("OK: cfg");
-        Serial.print("\r\nACK\r\n>");
+        COMM_SERIAL.print("\r\nACK\r\n>");
         lastComm = millis();
       }
       else if (!strcmp(tokens[0], "compass"))
       {
         receiveI2cCompassPacket();
-        Serial.print("\r\n");
-        Serial.print(compassYaw);
-        Serial.print("\r\n>");
+        COMM_SERIAL.print("\r\n");
+        COMM_SERIAL.print(compassYaw);
+        COMM_SERIAL.print("\r\n>");
         lastComm = millis();
       }
       else if (!strcmp(tokens[0], "psonar"))
       {
         receiveI2cSonarPacket();
-        Serial.print("\r\n");
-        Serial.print(rangeFRcm);
-        Serial.print(" ");
-        Serial.print(rangeFLcm);
-        Serial.print(" ");
-        Serial.print(rangeBRcm);
-        Serial.print(" ");
-        Serial.print(rangeBLcm);
-        Serial.print("\r\n>");
+        COMM_SERIAL.print("\r\n");
+        COMM_SERIAL.print(rangeFRcm);
+        COMM_SERIAL.print(" ");
+        COMM_SERIAL.print(rangeFLcm);
+        COMM_SERIAL.print(" ");
+        COMM_SERIAL.print(rangeBRcm);
+        COMM_SERIAL.print(" ");
+        COMM_SERIAL.print(rangeBLcm);
+        COMM_SERIAL.print("\r\n>");
         lastComm = millis();
       }
       else if (!strcmp(tokens[0], "sensor"))
@@ -86,16 +96,16 @@ void readCommCommand()
         switch (pin)
         {
           case 5: // battery
-            Serial.print("\r\n");
+            COMM_SERIAL.print("\r\n");
             //Serial.print(800);    // "800" here relates to battery voltage 11.72V = 3.91V per cell
-            Serial.print(analogRead(batteryInPin));
-            Serial.print("\r\n>");
+            COMM_SERIAL.print(analogRead(batteryInPin));
+            COMM_SERIAL.print("\r\n>");
             break;
 
           default:
-            Serial.print("\r\n");
-            Serial.print(analogRead(pin));
-            Serial.print("\r\n>");
+            COMM_SERIAL.print("\r\n");
+            COMM_SERIAL.print(analogRead(pin));
+            COMM_SERIAL.print("\r\n>");
             break;
         }
         lastComm = millis();
@@ -105,50 +115,52 @@ void readCommCommand()
         odometry->Reset();
         X = Y = Theta = 0.0;
         Ldistance = Rdistance = 0;
-        Serial.print("\r\nACK\r\n>");
+        COMM_SERIAL.print("\r\nACK\r\n>");
         lastComm = millis();
       }
       else if (!strcmp(tokens[0], "odom"))
       {
-        Serial.print("\r\n");
-        Serial.print(Ldistance);
-        Serial.print(" ");
-        Serial.print(Rdistance);
-        Serial.print(" ");
-        Serial.print(X);
-        Serial.print(" ");
-        Serial.print(Y);
-        Serial.print(" ");
-        Serial.print(Theta);
-        Serial.print("\r\n>");
+        COMM_SERIAL.print("\r\n");
+        COMM_SERIAL.print(Ldistance);
+        COMM_SERIAL.print(" ");
+        COMM_SERIAL.print(Rdistance);
+        COMM_SERIAL.print(" ");
+        COMM_SERIAL.print(X);
+        COMM_SERIAL.print(" ");
+        COMM_SERIAL.print(Y);
+        COMM_SERIAL.print(" ");
+        COMM_SERIAL.print(Theta);
+        COMM_SERIAL.print("\r\n>");
         lastComm = millis();
       }
       else if (!strcmp(tokens[0], "gps"))
       {
-        Serial.print("\r\n");
+        COMM_SERIAL.print("\r\n");
         if ((millis() - lastGpsData) > 2000 || gpsFix == 0)
         {
-          Serial.print("0\r\n>");
+          COMM_SERIAL.print("0\r\n>");
         }
         else
         {
-          Serial.print(gpsFix);
-          Serial.print(" ");
-          Serial.print(gpsSat);
-          Serial.print(" ");
-          Serial.print(millis() - lastGpsData);
-          Serial.print(" ");
-          Serial.print(gpsHdop);
-          Serial.print(" ");
-          Serial.print(longlat);
-          Serial.print("\r\n>");
+          COMM_SERIAL.print(gpsFix);
+          COMM_SERIAL.print(" ");
+          COMM_SERIAL.print(gpsSat);
+          COMM_SERIAL.print(" ");
+          COMM_SERIAL.print(millis() - lastGpsData);
+          COMM_SERIAL.print(" ");
+          COMM_SERIAL.print(gpsHdop);
+          COMM_SERIAL.print(" ");
+          COMM_SERIAL.print(longlat);
+          COMM_SERIAL.print("\r\n>");
         }
         lastComm = millis();
       }
       else if (!strcmp(tokens[0], "srf04"))
       {
         //Serial.println("OK: srf04");
-        Serial.print("\r\n"); Serial.print(200 + j); Serial.print("\r\n>");
+        COMM_SERIAL.print("\r\n"); 
+        COMM_SERIAL.print(200 + j); 
+        COMM_SERIAL.print("\r\n>");
         lastComm = millis();
       }
       else if (!strcmp(tokens[0], "getenc"))
@@ -157,17 +169,17 @@ void readCommCommand()
         switch (atoi(tokens[1]))
         {
           case 1:
-            Serial.print("\r\n");
-            Serial.print(Rdistance);
-            Serial.print("\r\n>");
+            COMM_SERIAL.print("\r\n");
+            COMM_SERIAL.print(Rdistance);
+            COMM_SERIAL.print("\r\n>");
             break;
           case 2:
-            Serial.print("\r\n");
-            Serial.print(Ldistance);
-            Serial.print("\r\n>");
+            COMM_SERIAL.print("\r\n");
+            COMM_SERIAL.print(Ldistance);
+            COMM_SERIAL.print("\r\n>");
             break;
           default:
-            Serial.print("\r\n0\r\n>");
+            COMM_SERIAL.print("\r\n0\r\n>");
             break;
         }
         lastComm = millis();
@@ -200,7 +212,7 @@ void readCommCommand()
 
         if (checksum == 0)
         {
-          Serial.print("\r\nACK\r\n>");
+          COMM_SERIAL.print("\r\nACK\r\n>");
           for (int k = 0; k < i - 1 ; k++)
           {
             // "pwm" comes in the range -100...100 - it has a meaning of "percent of max speed"
@@ -219,13 +231,13 @@ void readCommCommand()
         }
         else
         {
-          Serial.print("\r\nNAK\r\n>");
+          COMM_SERIAL.print("\r\nNAK\r\n>");
         }
       }
       else if (!strcmp(tokens[0], "vel"))
       {
         //Serial.println("OK: vel");
-        Serial.print("\r\n0 0 \r\n>");
+        COMM_SERIAL.print("\r\n0 0 \r\n>");
         lastComm = millis();
       }
       //else
@@ -234,7 +246,7 @@ void readCommCommand()
       //}
     }
   }
-  if (++j > 50)  // sensor "randomizer" for debugging
+  if (++j > 50)  // sensor "randomizer" for srf04 debugging
     j = 0;
 }
 #endif // COMM_ELEMENT
@@ -242,10 +254,10 @@ void readCommCommand()
 #ifdef COMM_SIMPLE
 void control()
 {
-  if (Serial.available())
+  if (COMM_SERIAL.available())
   {
     int val;
-    val = Serial.read();
+    val = COMM_SERIAL.read();
     switch (val)
     {
       case 'a':   // forward
@@ -336,5 +348,3 @@ void readGpsUplink()
     lastGpsData = millis();
   }
 }
-
-

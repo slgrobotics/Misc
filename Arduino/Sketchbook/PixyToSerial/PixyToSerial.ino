@@ -1,124 +1,103 @@
-//
-// begin license header
-//
-// This file is part of Pixy CMUcam5 or "Pixy" for short
-//
-// All Pixy source code is provided under the terms of the
-// GNU General Public License v2 (http://www.gnu.org/licenses/gpl-2.0.html).
-// Those wishing to use Pixy source code, software and/or
-// technologies under different licensing terms should contact us at
-// cmucam@cs.cmu.edu. Such licensing terms are available for
-// all portions of the Pixy codebase presented here.
-//
-// end license header
-//
-// This sketch is a good place to start if you're just getting started with 
-// Pixy and Arduino.  This program simply prints the detected object blocks 
-// (including color codes) through the serial console.  It uses the Arduino's 
-// ICSP port.  For more information go here:
-//
-// http://cmucam.org/projects/cmucam5/wiki/Hooking_up_Pixy_to_a_Microcontroller_(like_an_Arduino)
-//
-// It prints the detected blocks once per second because printing all of the 
-// blocks for all 50 frames per second would overwhelm the Arduino's serial port.
-//
-   
-#include <SPI.h>  
-#include <Pixy.h>
+/*
+ * Copyright (c) 2021..., Sergei Grichine
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *    
+ * this is a no-warranty no-liability permissive license - you do not have to publish your changes,
+ * although doing so, donating and contributing is always appreciated
+ */
 
+//#define TRACE
+
+// Note Arduino Leonardo odd features:
+//    1. boot takes 10 seconds, LED blinks (bootloader waiting). 
+//          If it becomes a problem, see https://forum.arduino.cc/t/how-to-reduce-arduino-micro-leonardo-bootup-time/161222
+//    2. when USB is disconnected, and TRACE defined it will hang or wait 250ms on calls to Serial.print()
+   
 #define LED_PIN 13
+#define DBG1_PIN 2
+#define DBG2_PIN 3
 
 // Adjusted to work for SmartLab ReCon 6 - see RpiPico_ReCon6  - Sep 2021
 
-// This is the main Pixy object 
+#include <SPI.h>  
+#include <Pixy.h>
+
+// This is the main Pixy object.
+// My Pixy camera was trained on 3 colors (signatures) - Orange, Yellow, Blue
 Pixy pixy;
+
+// Sonars library:
+#include <NewPing.h>
+
+volatile int sonarLF, sonarF, sonarRF;
 
 void setup()
 {
+#ifdef TRACE
   Serial.begin(115200);
-  Serial1.begin(115200);    // Leonardo TX1
-  while (!Serial && !Serial1) {
-    ; // wait for serial port to connect. Needed for native USB port only - Leonardo
+  while (!Serial) {
+    ; // wait for USB serial port to connect or timeout. Needed for native USB port only - Leonardo
   }
+#endif // TRACE
 
-  Serial.print("Starting...\n");
+  // Leonardo TX1 (5V TTL), connected via 1K/680Ohm voltage divider
+  //    to Raspberry Pi Pico Pin 12, GP9 RX 3.3V TTL level!
+  Serial1.begin(115200);
 
-  pixy.init();
+  // DEBUG pins:
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(DBG1_PIN, OUTPUT);
+  pinMode(DBG2_PIN, OUTPUT);
+
+#ifdef TRACE
+  Serial.print("IP: starting...\n");
+#endif // TRACE
+
+  pixyInit();
+
+  sonarsInit();
+
+#ifdef TRACE
+  Serial.print("OK: setup completed\n");
+#endif // TRACE
 }
 
 void loop()
 { 
-  static int i = 0;
-  int j = 0;
-  uint16_t blocks;
-  char buf[32]; 
+  static int loopcnt = 0;
 
-  if (i%2000==0)
-    digitalWrite(LED_PIN,0);
-  
-  // grab blocks!
-  blocks = pixy.getBlocks();
-  i++;
-  
-  // If there are detect blocks, print them!
-  if (blocks)
+  digitalWrite(DBG1_PIN, HIGH); // start of loop
+
+  if (loopcnt % 1000 == 0) 
   {
-    digitalWrite(LED_PIN,1);
+    //digitalWrite(DBG2_PIN, HIGH); // start of print cycle
+    digitalWrite(LED_PIN,0);  // reset what was raised when Pixy blocks were found
 
-    // do this (print) every 10 frames because printing every
-    // frame would bog down the Arduino
-    //if (i%20==0)
-    {
-      /*
-      sprintf(buf, "Detected %d:\n", blocks);
-      Serial.print(buf);
-      for (j=0; j<blocks; j++)
-      {
-        sprintf(buf, "  block %d: ", j);
-        Serial.print(buf); 
-        pixy.blocks[j].print();
-      }
-      */
-
-      Block *block = &pixy.blocks[0];
-
-      if(block->width > 30 && block->height > 30)
-      {
-        printBlock(block);
-      }
-    }
-  }  
-}
-
-  // print block structure - see C:\Projects\Arduino\Sketchbook\libraries\Pixy\TPixy.h
-  // Field of view:
-  //     goal 45 degrees  left  x=0
-  //                    middle  x=150
-  //     goal 45 degrees right  x=300
-  //
-  //     goal 30 degrees  up    y=0
-  //                    middle  y=85
-  //     goal 30 degrees down   y=190
-  //
-  //    http://cmucam.org/projects/cmucam5/wiki/Arduino_API
-  //
-  //  pixy.blocks[i].signature The signature number of the detected object (1-7 for normal signatures)
-  //  pixy.blocks[i].x The x location of the center of the detected object (0 to 319)
-  //  pixy.blocks[i].y The y location of the center of the detected object (0 to 199)
-  //  pixy.blocks[i].width The width of the detected object (1 to 320)
-  //  pixy.blocks[i].height The height of the detected object (1 to 200)
-  //  pixy.blocks[i].angle The angle of the object detected object if the detected object is a color code.
-  //  pixy.blocks[i].print() A member function that prints the detected object information to the serial port
-
-  void printBlock(Block *block)
-  {
-    int x = block->x - 160; // objects to the left - negative, to the right - positive (-150...150)
-    int y = 100 - block->y; // objects below - negative above - positive (-90...90)
+    printSonars();    // we spend 10ms here. 
     
-    char buf[128];
-    //sprintf(buf, "sig: %d x: %d y: %d width: %d height: %d\n", signature, x, y, width, height);   
-    sprintf(buf, "*%d %d %d %d %d\n", x, y, block->width, block->height, block->signature);   
-    Serial.print(buf); 
-    Serial1.print(buf); 
-    //block->print();
+    //digitalWrite(DBG2_PIN, LOW); // end of print
   }
+
+  //digitalWrite(DBG2_PIN, HIGH);
+  processSonars();  // we spend 14us here, with rare occurencies of 500us
+  //digitalWrite(DBG2_PIN, LOW);
+  
+  //digitalWrite(DBG2_PIN, HIGH);
+  processPixy();
+  //digitalWrite(DBG2_PIN, LOW);
+
+  loopcnt++;
+
+  // most of non-print loops take 100us. Some will be 200us. Rare ones - 600us.
+  digitalWrite(DBG1_PIN, LOW); // end of loop
+  // typically outside the loop we spend 4us. Can be as high as 17us.
+}

@@ -1,14 +1,7 @@
 
-//#define ALFS_HBRIDGE
-#define DIRPWM_HBRIDGE
-
 #include <digitalWriteFast.h>
 #include <Wire.h>
 //#include "I2Cdev.h"
-
-#ifdef ALFS_HBRIDGE
-#include <AlfsTechHbridge.h>
-#endif // ALFS_HBRIDGE
 
 #include <Odometry.h>
 #include <PID_v1.h>
@@ -31,8 +24,7 @@ const int batteryInPin = A3;  // Analog input pin that the battery 1/3 divider i
 boolean doTRACE = false;
 
 const int mydt = 5;           // 5 milliseconds make for 200 Hz operating cycle
-//const int pidLoopFactor = 4;  // factor of 4 make for 20ms PID cycle
-const int pidLoopFactor = 20;   // factor of 20 make for 100ms PID cycle
+const int pidLoopFactor = 20; // factor of 20 make for 100ms PID cycle
 
 //-------------------------------------- Variable definitions --------------------------------------------- //
 
@@ -60,15 +52,10 @@ const int LeftMotorChannel = 1;
 // EMA period to smooth wheels movement. 100 is smooth but fast, 300 is slow.
 const int EmaPeriod = 20;
 
-// variables to compute exponential moving average:
-int emaPeriod[2];
-double valuePrev[2];
-double multiplier[2];
-
 // Plucky robot physical parameters:
 double wheelBaseMeters = 0.600;
 double wheelRadiusMeters = 0.192;
-double encoderTicksPerRevolution = 853;  // one wheel rotation
+double encoderTicksPerRevolution = 2506; // now has 16T sprocket. Prior art - 47T sprocket: 853;  // one wheel rotation
 
 // current robot pose, updated by odometry:
 double X;      // meters
@@ -90,6 +77,16 @@ volatile int rangeBLcm;
 // delivered by MotionPlug via I2C:
 double compassYaw = 0.0;
 
+int gpsFix = 0;
+int gpsSat = 0;
+int gpsHdop = 0;
+String longlat = "";
+long lastGpsData = 0; 
+
+char gpsChars[100];
+
+bool testDir = false;
+
 // milliseconds from last events:
 long lastComm = 0;
 long lastImu = 0;
@@ -98,25 +95,6 @@ long lastSonar = 0;
 
 // ------------------------------------------------------------------------------------------------------ //
 
-#ifdef ALFS_HBRIDGE
-AlfsTechHbridge motors;  	// constructor initializes motors and encoders
-#else // ALFS_HBRIDGE
-const int ENCODER_A_B = 2;      // side B (interrupt 0)
-const int ENCODER_B_B = 8;      // side B
-
-const int ENCODER_A_A = 3;    // side A (interrupt 1)
-const int ENCODER_B_A = 10;   // side A
-#endif // ALFS_HBRIDGE
-
-#ifdef DIRPWM_HBRIDGE
-// Arduino Mega 2560 PWM pins: 2 to 13 and 44 to 46
-// see https://www.arduino.cc/en/Main/ArduinoBoardMega2560    https://www.arduino.cc/en/Tutorial/SecretsOfArduinoPWM
-const int LDIR = 42;
-const int LPWM = 44;
-const int RDIR = 43;
-const int RPWM = 45;
-#endif // DIRPWM_HBRIDGE
-
 long timer = 0;     // general purpose timer
 long timer_old;
 
@@ -124,20 +102,11 @@ unsigned int loopCnt = 0;
 unsigned int lastLoopCnt = 0;
 
 void setup()
-{ 
-  //Serial.begin(19200);
-  Serial.begin(115200);
-  Serial1.begin(57600); // connect GPS Leonardo shiend uplink (pins 3 and 8) to pins 19 (RX) and 18 (TX)
+{
+  InitSerial(); 
 
-  pinMode (ledPin, OUTPUT);  // Status LED
-
-  // diagnostic LEDs:
-  pinMode (redLedPin, OUTPUT);
-  pinMode (yellowLedPin, OUTPUT);
-  pinMode (blueLedPin, OUTPUT);
-  pinMode (greenLedPin, OUTPUT);
-  pinMode (whiteLedPin, OUTPUT);
-
+  InitLeds();
+  
   int PID_SAMPLE_TIME = mydt * pidLoopFactor;  // milliseconds.
 
   // turn the PID on and set its parameters:
@@ -155,28 +124,7 @@ void setup()
 
   // ======================== init motors and encoders: ===================================
 
-#ifdef ALFS_HBRIDGE
-  // uncomment one or both of the following lines if your motors' directions need to be flipped
-  //motors.flipLeftMotor(true);
-  //motors.flipRightMotor(true);
-#endif // ALFS_HBRIDGE
-
-#ifndef ALFS_HBRIDGE
-  pinMode(RDIR, OUTPUT);
-  pinMode(RPWM, OUTPUT);
-  pinMode(LDIR, OUTPUT);
-  pinMode(LPWM, OUTPUT);
-
-  pinMode(ENCODER_A_A, INPUT); 
-  pinMode(ENCODER_B_A, INPUT); 
-  digitalWrite(ENCODER_A_A, HIGH);       // turn on pullup resistors
-  digitalWrite(ENCODER_B_A, HIGH);
-
-  pinMode(ENCODER_A_B, INPUT); 
-  pinMode(ENCODER_B_B, INPUT); 
-  digitalWrite(ENCODER_A_B, HIGH);       // turn on pullup resistors
-  digitalWrite(ENCODER_B_B, HIGH);
-#endif // not ALFS_HBRIDGE
+  MotorsInit();
 
   EncodersInit();    // attach interrupts
 
@@ -186,42 +134,10 @@ void setup()
   setEmaPeriod(RightMotorChannel, EmaPeriod);
   setEmaPeriod(LeftMotorChannel, EmaPeriod);
   
-  pwm_R = 0;
-  pwm_L = 0;
-  
-#ifdef ALFS_HBRIDGE
-  motors.init();
-#endif // ALFS_HBRIDGE
-
-  set_motors();
-
-  blinkLED(10, 50);
-
-  digitalWrite(ledPin, HIGH);
-
-/*
-  digitalWrite(redLedPin, HIGH);
-  digitalWrite(yellowLedPin, HIGH);
-  digitalWrite(blueLedPin, HIGH);
-  digitalWrite(greenLedPin, HIGH);
-  digitalWrite(whiteLedPin, HIGH);
-*/
-
   timer = millis();
   delay(20);
   loopCnt = 0;
 }
-
-int gpsFix = 0;
-int gpsSat = 0;
-int gpsHdop = 0;
-String longlat = "";
-long lastGpsData = 0; 
-
-char gpsChars[100];
-
-bool testDir = false;
-
 
 void loop() //Main Loop
 {
@@ -329,36 +245,3 @@ void loop() //Main Loop
     }
   }
 }
-
-void ema(int ch)
-{
-  // smooth movement by using ema:
-  switch (ch)
-  {
-    case RightMotorChannel:
-      setpointSpeedR = (valuePrev[ch] < -1000000.0) ? desiredSpeedR : ((desiredSpeedR - valuePrev[ch]) * multiplier[ch] + valuePrev[ch]);  // ema
-      //setpointSpeedR = desiredSpeedR; // no ema
-      valuePrev[ch] = setpointSpeedR;
-      break;
-
-    case LeftMotorChannel:
-      setpointSpeedL = (valuePrev[ch] < -1000000.0) ? desiredSpeedL : ((desiredSpeedL - valuePrev[ch]) * multiplier[ch] + valuePrev[ch]);  // ema
-      //setpointSpeedL = desiredSpeedL; // no ema
-      valuePrev[ch] = setpointSpeedL;
-      break;
-  }
-}
-
-void resetEma(int ch)
-{
-  valuePrev[ch] = -2000000.0;  // signal to use desiredSpeed directly for the first point
-}
-
-void setEmaPeriod(int ch, int period)
-{
-  resetEma(ch);
-  emaPeriod[ch] = period;
-  multiplier[ch] = 2.0 / (1.0 + (double)emaPeriod[ch]);
-}
-
-

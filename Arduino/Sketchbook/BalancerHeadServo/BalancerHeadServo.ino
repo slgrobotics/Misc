@@ -1,4 +1,6 @@
 
+// see Z:\Documents\My\Pictures\20141202 - Big Balancer
+
 #define SERIAL_ROBOREALM
 //#define SERIAL_MY
 
@@ -330,5 +332,3 @@ double myMap(double x, int in_min, int in_max, int out_min, int out_max)
 {
   return (x - (double)in_min) * (double)(out_max - out_min) / (double)(in_max - in_min) + (double)out_min;
 }
-
-

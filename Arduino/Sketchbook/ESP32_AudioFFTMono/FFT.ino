@@ -1,4 +1,6 @@
 
+//  Original code credits: 2022/06/03 Radio pliers http://radiopench.blog96.fc2.com/blog-entry-1184.html
+
 void performFFT()
 {
   // Prepare FFT calculation data (1.7ms)

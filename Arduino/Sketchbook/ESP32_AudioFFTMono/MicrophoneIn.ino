@@ -99,8 +99,7 @@ void i2s_install() {
   const i2s_config_t i2s_config = {
     .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX),
     .sample_rate = SAMPLE_RATE,
-    //.bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
-    .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
+    .bits_per_sample = MIC_BITS_PER_SAMPLE, // I2S_BITS_PER_SAMPLE_16BIT or I2S_BITS_PER_SAMPLE_32BIT
     .channel_format = I2S_MIC_CHANNEL,      // L/R to high - left, L/R to ground - right channel
     .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_STAND_I2S),
     .intr_alloc_flags = 0, // default interrupt priority

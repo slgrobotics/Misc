@@ -1,7 +1,7 @@
 /* 
  *  Spectrum display of audio signal on 128x64 OLED
  *  The board uses ESP32 DevKitC V4. The library is ArduinoFFT.h
- *  Original code: 2022/06/03 Radio pliers http://radiopench.blog96.fc2.com/
+ *  Original code: 2022/06/03 http://radiopench.blog96.fc2.com/blog-entry-1184.html
  *  Modified Oct 2022 by Sergei Grichine for mono operation and ESP32
  *  
  *  Calibration: https://onlinetonegenerator.com/
@@ -11,6 +11,9 @@
 #include <Wire.h>
 #include "arduinoFFT.h"
 
+// comment this to save some memory:
+#define USE_32BIT_SAMPLING
+
 // attach a LED to GPIO 17
 #define LED_PIN GPIO_NUM_17
 #define DEBUG_PIN GPIO_NUM_16
@@ -19,10 +22,19 @@ arduinoFFT FFT = arduinoFFT(); // Create FFT object
  
 #define SAMPLE_BUFFER_SIZE 512  // number of samples
 
-double vReal[SAMPLE_BUFFER_SIZE];         // Computational domain of FFT (actually maybe 32-bit float?)
+// Computational domain of FFT:
+double vReal[SAMPLE_BUFFER_SIZE];
 double vImag[SAMPLE_BUFFER_SIZE];
-int32_t wave[SAMPLE_BUFFER_SIZE];         // raw waveform data
-double maxWave = 0.0;  // scaling for wave display
+
+// raw waveform data:
+#ifdef USE_32BIT_SAMPLING
+#define MIC_BITS_PER_SAMPLE  I2S_BITS_PER_SAMPLE_32BIT
+int32_t wave[SAMPLE_BUFFER_SIZE];
+#else
+#define MIC_BITS_PER_SAMPLE  I2S_BITS_PER_SAMPLE_16BIT
+int16_t wave[SAMPLE_BUFFER_SIZE];
+#endif
+double maxWave = 0.0;  // to compute scaling factor for wave display
  
 void setup()
 {

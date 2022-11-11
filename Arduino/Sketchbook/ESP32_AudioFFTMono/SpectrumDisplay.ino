@@ -7,7 +7,7 @@
  *    SCL - 22 
  *    SDA - 21
  *
- *  Original code credits: 2022/06/03 Radio pliers http://radiopench.blog96.fc2.com/
+ *  Original code credits: 2022/06/03 Radio pliers http://radiopench.blog96.fc2.com/blog-entry-1184.html
  */
 
 //U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* clock=*/ 22, /* data=*/ 21, /* reset=*/ U8X8_PIN_NONE);

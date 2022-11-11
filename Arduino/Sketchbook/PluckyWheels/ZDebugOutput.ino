@@ -1,5 +1,29 @@
 /* For debugging purposes */
 
+void InitLeds()
+{
+  pinMode (ledPin, OUTPUT);  // Status LED
+
+  // diagnostic LEDs:
+  pinMode (redLedPin, OUTPUT);
+  pinMode (yellowLedPin, OUTPUT);
+  pinMode (blueLedPin, OUTPUT);
+  pinMode (greenLedPin, OUTPUT);
+  pinMode (whiteLedPin, OUTPUT);
+
+  blinkLED(10, 50);
+
+  digitalWrite(ledPin, HIGH);
+
+/*
+  digitalWrite(redLedPin, HIGH);
+  digitalWrite(yellowLedPin, HIGH);
+  digitalWrite(blueLedPin, HIGH);
+  digitalWrite(greenLedPin, HIGH);
+  digitalWrite(whiteLedPin, HIGH);
+*/
+}
+
 void blinkLED(int nTimes, int halfPeriodMs)
 {
   for (int i = 0; i < nTimes; i++)
@@ -90,5 +114,3 @@ double to360(double a)
   
   return a;
 }
-
-

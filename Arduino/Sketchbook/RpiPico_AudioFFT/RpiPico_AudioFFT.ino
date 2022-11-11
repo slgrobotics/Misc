@@ -1,6 +1,6 @@
 /* Spectrum display of audio signal on 128x64 OLED 20220603_PiPicoFftAnalyzer.ino
   The board uses RP pico. The library is ArduinoFFT.h
-  2022/06/03 Radio pliers http://radiopench.blog96.fc2.com/
+  2022/06/03 Radio pliers http://radiopench.blog96.fc2.com/blog-entry-1184.html
 */
 #include <Arduino.h>
 #include <U8g2lib.h>

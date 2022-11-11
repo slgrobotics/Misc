@@ -15,7 +15,7 @@
  * although doing so, donating and contributing is always appreciated
  */
  
-#define TRACE
+//#define TRACE
 //#define USE_EMA
 
 #include <PID_v1.h>

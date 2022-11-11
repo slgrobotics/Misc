@@ -22,7 +22,7 @@ void blinkLED(int nTimes, int halfPeriodMs)
 
 void setup()
   {
-    Serial.begin(19200);
+    Serial.begin(115200);
 
     digitalWrite(ledPin, LOW);
     pinMode(ledPin, OUTPUT);     
@@ -53,8 +53,8 @@ void loop()
     //plm629pid->simpleMove01('A');
     
     long acc = 50L;
-    long vel = 1000000L;
-    long pos = 50000L;
+    long vel = 80000L;
+    long pos = 5000L;
     
     Serial.print("acc: "); Serial.println(acc);
     Serial.print("vel: "); Serial.println(vel);
@@ -93,6 +93,8 @@ void loop()
       Serial.print("   Integration Sum: "); Serial.print(plm629->readIntegrationSum()); Serial.print("   ");
       plm629->readSignalsRegister();
 
+      Serial.println("");
+      
       blinkLED(1, 500);
       //delay(1000);
     }

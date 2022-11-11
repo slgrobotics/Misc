@@ -12,7 +12,7 @@ IBT-2 pin 8 (GND) to Arduino GND
 IBT-2 pins 5 (R_IS) and 6 (L_IS) not connected
 */
  
-int SENSOR_PIN = 0; // center pin of the potentiometer
+const int analogInPin = A1;  // Analog input pin that the potentiometer is attached to
  
 int RPWM_Output = 9; // Arduino PWM output pin 9; connect to IBT-2 pin 1 (RPWM)
 int LPWM_Output = 10; // Arduino PWM output pin 10; connect to IBT-2 pin 2 (LPWM)
@@ -24,6 +24,8 @@ int R_EN = 8;
 void setup()
 {
   setPWMfrequency(0x02);  // timer 1 for pins 9,10, set to 3.92KHz
+
+  pinMode(analogInPin, INPUT);
 
   pinMode(RPWM_Output, OUTPUT);
   pinMode(LPWM_Output, OUTPUT);
@@ -39,7 +41,7 @@ void setup()
  
 void loop()
 {
-  int sensorValue = analogRead(SENSOR_PIN);
+  int sensorValue = analogRead(analogInPin);
   int reversePWM = 0;
   int forwardPWM = 0;
   

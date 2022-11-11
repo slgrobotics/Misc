@@ -9,54 +9,56 @@
 #define PCINT_MODE CHANGE
 #define PCINT_FUNCTION rcPulseChange
 
-volatile boolean prev_pinState;   // used to determine whether a pin has gone low-high or high-low
-volatile unsigned long pciTime;   // the time of the current pin change interrupt
-volatile unsigned long pwmTimer;  // to store the start time of each PWM pulse
-
-volatile boolean pwmFlag;         // flag whenever new data is available on each pin
-volatile boolean RC_data_rdy;     // flag when all RC receiver channels have received a new pulse
-unsigned long pwmPeriod;          // period, mirco sec, between two pulses on each pin
+volatile boolean RC_data_rdy;         // flag that new R/C data is available
+unsigned long pwmTimer;               // to store pulse start time
 
 void rcPulseChange()
 {
-  pciTime = micros();                                   // Record the time of the PIN change in microseconds
-
   uint8_t trigger = getPinChangeInterruptTrigger(digitalPinToPCINT(PCINT_PIN));
+  
   if (trigger == RISING)
   {
-    prev_pinState = 1;                                  // record pin state
-    pwmPeriod = pciTime - pwmTimer;                     // calculate the time period, micro sec, between the current and previous pulse
-    pwmTimer = pciTime;                                 // record the start time of the current pulse
+    pwmTimer = micros();              // record the start time of the current pulse
   }
   else if (trigger == FALLING)
   {
-    prev_pinState = 0;                                  // record pin state
-    rcpwm = pciTime - pwmTimer;                         // calculate the duration of the current pulse, about 4us precision at best
-    pwmFlag = HIGH;                                     // flag that new data is available
-    RC_data_rdy = HIGH;
+    // volatile!
+    rcpwm = micros() - pwmTimer + RC_TRIM; // calculate the duration of the current pulse, about 4us precision at best
+
+    if(rcpwm >= 800 && rcpwm <= 2200) // only accept valid RC values    
+    {
+      // volatile!
+      rc_lastAvailable = millis();
+      // volatile!
+      RC_data_rdy = true;             // flag that new data is available
+    }
   }
 }
 
 void setupRcReceiverRead()
 {
-  // set pins to input
-  pinMode(PCINT_PIN, INPUT);
-  //pinMode(LED_BUILTIN, OUTPUT);
+  // set pins to input, have pullup to protect from open circuit noise:
+  pinMode(PCINT_PIN, INPUT_PULLUP);
+  //pinMode(PCINT_PIN, INPUT);
 
   // Attach the new PinChangeInterrupt and enable event function below
   attachPCINT(digitalPinToPCINT(PCINT_PIN), rcPulseChange, CHANGE);
+
+  RC_data_rdy = false;
+  rc_lastAvailable = 0;
 }
 
-
+// runs in main thread
 boolean RC_avail()
 {
   boolean avail = RC_data_rdy;
-  RC_data_rdy = LOW;                          // reset the flag
+  RC_data_rdy = false;                          // reset the flag
   return avail;
 }
 
 void print_RCpwm()
 {                             
   // display the raw RC Channel PWM Inputs
-  Serial.println(rcpwm);
+  unsigned int tmp = rcpwm;
+  Serial.print(tmp);
 }

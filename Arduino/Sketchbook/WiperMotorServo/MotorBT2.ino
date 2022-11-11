@@ -11,6 +11,7 @@
 #define R_EN 8
 
 //#define DEADZONE 30   // defined in main file for clarity
+// if we are given pwm > FULLZONE, we just switch H-Bridge to full ON:
 #define FULLZONE 250
 
 void setupMotor()
