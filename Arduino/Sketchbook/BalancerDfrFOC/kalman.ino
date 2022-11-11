@@ -1,8 +1,8 @@
-// **************************
+// ********************************************
 // Calculate the Angle
 // Takes acceleration, GyroY, dt
 // Calls Kalman to calculate pitch, pitch_dot
-// **************************
+// ********************************************
 boolean calculatePitch(void)
 {
   boolean ret = true;
@@ -28,7 +28,7 @@ boolean calculatePitch(void)
   return ret;  // returns success flag
 }
 
-//*--------- Kalman filter implementation ------------------*/
+// --------- Kalman filter implementation ------------------
 
 // local persistent variables:
 static const float C_0 = 1;

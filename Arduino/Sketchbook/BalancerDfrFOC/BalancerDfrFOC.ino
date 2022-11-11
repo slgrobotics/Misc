@@ -2,11 +2,11 @@
 /*
  * 
  * This is a quick compilation of the code from https://github.com/simplefoc/Arduino-FOC-balancer
- * and PID and Filter code from core SimpleFOC library.
+ * and PID and Filter code from core SimpleFOC library: https://github.com/simplefoc/Arduino-FOC/tree/master/src/common
  * 
  * adapted 08/2022 for Arduino Uno with DFRobot motor/IMU shield (small Balancer) - Sergei Grichine
  * 
- * repository at: https://github.com/slgrobotics/Misc/tree/master/Arduino/Sketchbook
+ * repository at: https://github.com/slgrobotics/Misc/tree/master/Arduino/Sketchbook/BalancerDfrFOC
  * 
  * copy rights no more restrictive than the code cited above as follows:
  * 
@@ -32,6 +32,7 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
  * 
+ * Author: Sergei Grichine, August 2022
  */
 
 #include "lowpass_filter.h"
@@ -59,9 +60,7 @@ float pitch_dot;  // Optimal (estimated) angular velocity, positive when turning
 // control algorithm parameters
 // stabilization PID:
 //PIDController pid_stb{.P = 30, .I = 100, .D = 1, .ramp = 100000, .limit = 7}; // original
-//PIDController pid_stb{.P = 25, .I = 50, .D = 0.9, .ramp = 100000, .limit = 7};
-//PIDController pid_stb{.P = 20, .I = 50, .D = 0.8, .ramp = 0, .limit = 7};
-PIDController pid_stb{.P = 20, .I = 10, .D = 0.8, .ramp = 0, .limit = 7};
+PIDController pid_stb{.P = 35, .I = 50, .D = 2.2, .ramp = 100000, .limit = 7}; // original
 
 // velocity PID:
 PIDController pid_vel{.P = 0.01, .I = 0.03, .D = 0, .ramp = 10000, .limit = M_PI / 10}; // original
@@ -75,8 +74,8 @@ LowPassFilter lpf_throttle{.Tf = 0.5};
 LowPassFilter lpf_steering{.Tf = 0.1};
 
 // Bluetooth app variables
-float steering = 0.0; // -1, 0 or +1
-float throttle = 0.0; // -8..8
+float steering = 0.0; // -100..100
+float throttle = 0.0; // -100..100
 
 // measured by encoders:
 float motorR_shaft_velocity = 0.0;
@@ -125,9 +124,6 @@ void setup()
 
   initImu();
 
-  GyroCalibrate();
-  delay(100);
-
   initMotors();
 
   initEncoders();
@@ -153,19 +149,21 @@ void taskMainLoop(Task* me)
 
   readFromImu();
 
+  acceleration = AccelY / 267;     // current acceleration along Y-axis, in G's
+
   if(calculatePitch())  // must be on the fast loop to keep track of accel/gyro all the time
   {
     // we come here at 3ms with pitch and pitch_dot calculated by Kalman filter
     state = 1;
 
     // calculate the target pitch for throttle control - set it to 0 when tuning stabilizing PID:
-    target_pitch = lpf_pitch_cmd(pid_vel((motorR_shaft_velocity + motorL_shaft_velocity) / 2.0 - lpf_throttle(throttle/10.0)));
+    target_pitch = lpf_pitch_cmd(pid_vel((motorR_shaft_velocity + motorL_shaft_velocity) / 2.0 - lpf_throttle(throttle/50.0)));
     
     // calculate the target voltage
     float voltage_control = pid_stb(target_pitch - pitch / 57.3); // back to radians here
     
     // filter steering
-    float steering_adj = lpf_steering(steering);
+    float steering_adj = lpf_steering(-steering/50.0);
     
     // set the target voltage (torque) values:
     pwm_R = (voltage_control + steering_adj) * pwmFactor;

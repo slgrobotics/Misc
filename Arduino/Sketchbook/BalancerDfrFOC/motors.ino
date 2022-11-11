@@ -1,5 +1,5 @@
 
-#define DEADZONE 40
+#define DEADZONE 20
 
 // limit power up to 255:
 #define MAX_POWER 255

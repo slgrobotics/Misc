@@ -4,6 +4,8 @@
 // takes chars from serial via Bluetooth BLE-LINK and
 // produces throttle and steering
 //
+// see https://github.com/slgrobotics/Misc/tree/master/Android/BalancerController
+//
 // **************************
 
 #define CHANNEL_IDENTIFY         0    // send back device ident string
@@ -27,8 +29,9 @@ void remote()
     val=Serial.read();
     switch (val)
     {
-    case 'a':             // forward
-        //shortBuzz();
+    case 'a':             // forward - letters a,b,s,r,l - when using form activity in Android app
+        Serial.print((char)val);
+        shortBuzz();
         if(throttle > -8)         
         { 
           throttle -= 1.0;
@@ -36,6 +39,7 @@ void remote()
         break;
           
     case 'b':             // backwards
+        Serial.print((char)val);
         if(throttle < 8)
         { 
           throttle += 1.0;
@@ -43,19 +47,22 @@ void remote()
         break;
           
     case 's':             // stop
+        Serial.println((char)val);
         throttle=0;
         steering=0;
         break;
       
     case 'r':             // right
+        Serial.println((char)val);
         steering=-1;
         break;
       
     case 'l':            // left
+        Serial.println((char)val);
         steering=1;
         break;
       
-    case '*':            // ToArduino packet
+    case '*':            // ToArduino packet - when using "bubble" activity in Android app
         {
           //shortBuzz();
 
@@ -121,6 +128,8 @@ void remote()
         break;
       
     default:
+        Serial.print((char)val);
+        Serial.println(" - ??");
         break;      
     }
   }
@@ -155,16 +164,14 @@ void controlAction(int channel, int command, int nValues, int* cmdValues)
                 {
                   //shortBuzz();
                   //Serial.println("*ARD COMM OK");
-                  float speed = (float)constrain(cmdValues[1], -700, 700);
-                  float turn = (float)constrain(cmdValues[0], -250, 250);
+                  throttle = (float)constrain(cmdValues[1], -100, 100);
+                  steering = (float)constrain(cmdValues[0], -100, 100);
 /*
     Serial.print(":");
-    Serial.print(speed);
+    Serial.print(throttle);
     Serial.print(" ");
-    Serial.print(turn);
-*/                  
-                  throttle = -speed / 100.0;
-                  steering = -turn / 200.0;
+    Serial.print(steering);
+*/
                 }
                 break;
                 

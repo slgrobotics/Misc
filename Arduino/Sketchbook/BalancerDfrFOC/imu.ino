@@ -24,6 +24,8 @@ void initImu()
   delay(100);
   initGyro();
   delay(100);
+  GyroCalibrate();
+  delay(100);
 }
 
 //
@@ -31,8 +33,7 @@ void initImu()
 //
 void readFromImu()
 {
-  AccelRead();
-  
+  AccelRead();  
   GyroRead();
 }
 
@@ -49,10 +50,9 @@ void AccelRead()
 {
   readFrom(DEVICE, regAddress, TO_READ, buff);   //read the acceleration data from the ADXL345
   
-  //AccelX = (((int)buff[1]) << 8) | buff[0]; 
+  AccelX = (((int)buff[1]) << 8) | buff[0]; 
   AccelY = (((int)buff[3]) << 8) | buff[2]; 
-  //AccelZ = (((int)buff[5]) << 8) | buff[4]; 
-  acceleration = AccelY / 267;     // current acceleration along Y-axis, in G's
+  AccelZ = (((int)buff[5]) << 8) | buff[4]; 
 }
 
 // **************************
