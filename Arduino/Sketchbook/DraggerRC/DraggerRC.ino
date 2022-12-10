@@ -13,6 +13,8 @@
 //      timers 4 and 5, PWM pins 44,45 - see setTimerForPWM() in Motors section.
 // DFrobot.com is the source of original code and their "6 DOF IMU Shield" is used here.
 //
+// As of 2022-12-10 this code is deployed on Dragger robot and works with its joystick and PX4/RPi3 "Lawnmower" controller
+//
 // Sergei Grichine -  trackroamer.com   slg@quakemap.com
 //
 

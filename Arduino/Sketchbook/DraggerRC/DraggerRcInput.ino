@@ -7,7 +7,8 @@
 #define PCINT_PIN_RIGHT 19
 
 // trim in case there's a timing discrepancy between RPi Hat and Arduino:
-#define PW_TRIM 0 // 60
+#define PW_TRIM (-36) // PCA 9685 is very precise with its 1500 us midpoint.
+#define DEADZONE_RC 10
 
 #define PCINT_FUNCTION_LEFT rcPulseChange_LEFT
 #define PCINT_FUNCTION_RIGHT rcPulseChange_RIGHT
@@ -57,6 +58,10 @@ void rcPulseChange_LEFT()
   else
   {
     int pw = pciTime - lastRisingUs_LEFT + PW_TRIM; // calculate the duration of the current pulse
+    if(pw > 1500 - DEADZONE_RC && pw < 1500 + DEADZONE_RC)
+    {
+      pw = 1500;      
+    }
     if(800 < pw && pw < 2200)
     {
       PW_LEFT = pw;
@@ -78,6 +83,10 @@ void rcPulseChange_RIGHT()
   else
   {
     int pw = pciTime - lastRisingUs_RIGHT + PW_TRIM; // calculate the duration of the current pulse
+    if(pw > 1500 - DEADZONE_RC && pw < 1500 + DEADZONE_RC)
+    {
+      pw = 1500;      
+    }
     if(800 < pw && pw < 2200)
     {
       PW_RIGHT = pw;
