@@ -4,6 +4,8 @@
  * Reads values from a 4-sensor ultrasound unit (sold widely for around US $20 on Amazon)
  * and writes the values to the serial port.
  *
+ * See schematics at  https://photos.app.goo.gl/WsqkA4XpYSLrVDX59
+ *
  * Copyright (c) 2012...2016..., Sergei Grichine   http://trackroamer.com, https://github.com/slgrobotics
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
