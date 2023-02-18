@@ -35,6 +35,8 @@ void blinkLED(int nTimes, int halfPeriodMs)
   }
 }
 
+#ifdef TRACE
+
 #define PRINT_INTERVAL_MS 5000
 
 unsigned long lastPrintMillis = 0;
@@ -46,51 +48,49 @@ void printAll()
   {
     lastPrintMillis = millis();
 
-    if (doTRACE)
-    {
-      long Ldur = Ldistance;
-      long Rdur = Rdistance;
 
-      Serial.print("-------------------- ");
-      Serial.print((loopCnt - lastLoopCnt) / (PRINT_INTERVAL_MS / 1000));
-      Serial.println(" loops/sec");
+    long Ldur = Ldistance;
+    long Rdur = Rdistance;
 
-      Serial.print("Motors:   Right pwm_R: ");
-      Serial.print(pwm_R);
-      Serial.print("       Left pwm_L: ");
-      Serial.println(pwm_L);
+    Serial.print("-------------------- ");
+    Serial.print((loopCnt - lastLoopCnt) / (PRINT_INTERVAL_MS / 1000));
+    Serial.println(" loops/sec");
 
-      Serial.print("Speed:   Right: ");
-      Serial.print(speedMeasured_R);
-      Serial.print("       Left: ");
-      Serial.println(speedMeasured_L);
+    Serial.print("Motors:   Right pwm_R: ");
+    Serial.print(pwm_R);
+    Serial.print("       Left pwm_L: ");
+    Serial.println(pwm_L);
 
-      Serial.print("PID_L:   speedMeasured_L: ");
-      Serial.print(speedMeasured_L);
-      Serial.print("       dpwm_L: ");
-      Serial.print(dpwm_L);
-      Serial.print("       distL: ");
-      Serial.print(distL);
-      Serial.print("       desiredSpeedL: ");
-      Serial.println(desiredSpeedL);
+    Serial.print("Speed:   Right: ");
+    Serial.print(speedMeasured_R);
+    Serial.print("       Left: ");
+    Serial.println(speedMeasured_L);
 
-      Serial.print("Encoders:  Right Rdistance: ");
-      Serial.print(Rdur);
-      Serial.print("       Left Ldistance: ");
-      Serial.println(Ldur);
+    Serial.print("PID_L:   speedMeasured_L: ");
+    Serial.print(speedMeasured_L);
+    Serial.print("       dpwm_L: ");
+    Serial.print(dpwm_L);
+    Serial.print("       distL: ");
+    Serial.print(distL);
+    Serial.print("       desiredSpeedL: ");
+    Serial.println(desiredSpeedL);
 
-      Serial.print("Odometry: X=");
-      Serial.print(X);
-      Serial.print("    Y=");
-      Serial.print(Y);
-      Serial.print(" meters    Theta=");
-      Serial.print(Theta);
-      Serial.print("  (");
-      Serial.print(to360(Theta * 57.295));
-      Serial.println(" degrees)");
+    Serial.print("Encoders:  Right Rdistance: ");
+    Serial.print(Rdur);
+    Serial.print("       Left Ldistance: ");
+    Serial.println(Ldur);
 
-      lastLoopCnt = loopCnt;
-    }
+    Serial.print("Odometry: X=");
+    Serial.print(X);
+    Serial.print("    Y=");
+    Serial.print(Y);
+    Serial.print(" meters    Theta=");
+    Serial.print(Theta);
+    Serial.print("  (");
+    Serial.print(to360(Theta * 57.295));
+    Serial.println(" degrees)");
+
+    lastLoopCnt = loopCnt;
   }
 }
 
@@ -114,3 +114,4 @@ double to360(double a)
   
   return a;
 }
+#endif

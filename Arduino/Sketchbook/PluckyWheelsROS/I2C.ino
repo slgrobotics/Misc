@@ -15,7 +15,7 @@ void receiveI2cCompassPacket()
   if(lastCompassYaw != compassYaw)
   {
     lastCompassYaw = compassYaw;
-    lastImu = millis();
+    lastImuMs = millis();
   }
 }
 
@@ -72,7 +72,7 @@ void receiveI2cSonarPacket()
 //    Serial.print(rangeBLcm);
 //    Serial.print(" ");
 //    Serial.println(checksum);
-    lastSonar = millis();
+    lastSonarMs = millis();
   }
   else
   {

@@ -3,17 +3,273 @@
 // **************************
 
 //#define COMM_SIMPLE
-#define COMM_ELEMENT
+//#define COMM_ELEMENT
+#define COMM_ARTICUBOTS
+
+//#define ARTICUBOTS_USE_SERVOS
+#define ARTICUBOTS_USE_BASE
 
 #define COMM_SERIAL Serial
+#define BAUDRATE_ARTICUBOTS 115200
 
 void InitSerial()
 {
   Serial1.begin(57600); // connect GPS Leonardo shield uplink (pins 3 and 8) to pins 19 (RX) and 18 (TX)
 
-  //Serial.begin(115200);         // start serial for USB
+#ifdef COMM_ARTICUBOTS
+  COMM_SERIAL.begin(BAUDRATE_ARTICUBOTS);   // start serial for USB to Raspberry Pi
+#else
+  //Serial.begin(115200);     // start serial for USB
   COMM_SERIAL.begin(115200);  // start serial for Funduino Bluetooth XBee
+#endif  
 }
+
+#ifdef COMM_ARTICUBOTS
+
+/* Define single-letter commands that will be sent by the PC over the
+   serial link.
+*/
+
+#define ANALOG_READ    'a'
+#define GET_BAUDRATE   'b'
+#define PIN_MODE       'c'
+#define DIGITAL_READ   'd'
+#define READ_ENCODERS  'e'
+#define MOTOR_SPEEDS   'm'
+#define MOTOR_RAW_PWM  'o'
+#define SONAR_PING     'p'
+#define RESET_ENCODERS 'r'
+#define SERVO_WRITE    's'
+#define SERVO_READ     't'
+#define UPDATE_PID     'u'
+#define DIGITAL_WRITE  'w'
+#define ANALOG_WRITE   'x'
+
+#define LEFT            0
+#define RIGHT           1
+
+/* Variable initialization */
+
+unsigned char moving = 0; // is the base in motion?
+
+// A pair of varibles to help parse serial commands (thanks Fergs)
+int arg = 0;
+int index = 0;
+
+// Variable to hold an input character
+char chr;
+
+// Variable to hold the current single-character command
+char cmd;
+
+// Character arrays to hold the first and second arguments
+char argv1[16];
+char argv2[16];
+
+// The arguments converted to integers
+long arg1;
+long arg2;
+
+void readCommCommand()
+{
+  while (COMM_SERIAL.available())
+  {
+    // Read the next character
+    chr = Serial.read();
+    lastCommMs = millis();
+
+    // Terminate a command with a CR
+    if (chr == 13) {
+      if (arg == 1) argv1[index] = '\0';
+      else if (arg == 2) argv2[index] = '\0';
+      runCommand();
+      resetCommand();
+    }
+    // Use spaces to delimit parts of the command
+    else if (chr == ' ') {
+      // Step through the arguments
+      if (arg == 0) arg = 1;
+      else if (arg == 1)  {
+        argv1[index] = '\0';
+        arg = 2;
+        index = 0;
+      }
+      continue;
+    }
+    else {
+      if (arg == 0) {
+        // The first arg is the single-letter command
+        cmd = chr;
+      }
+      else if (arg == 1) {
+        // Subsequent arguments can be more than one character
+        argv1[index] = chr;
+        index++;
+      }
+      else if (arg == 2) {
+        argv2[index] = chr;
+        index++;
+      }
+    }
+  }
+}
+
+/* Clear the current command parameters */
+void resetCommand() {
+  cmd = '\0';
+  memset(argv1, 0, sizeof(argv1));
+  memset(argv2, 0, sizeof(argv2));
+  arg1 = 0;
+  arg2 = 0;
+  arg = 0;
+  index = 0;
+}
+
+/* Run a command.  Commands are defined in commands.h */
+int runCommand() {
+  int i = 0;
+  char *p = argv1;
+  char *str;
+  int pid_args[4];
+  arg1 = atoi(argv1);
+  arg2 = atoi(argv2);
+  
+  switch(cmd) {
+  case GET_BAUDRATE:
+    Serial.println(BAUDRATE_ARTICUBOTS);
+    break;
+  case ANALOG_READ:
+    Serial.println(analogRead(arg1));
+    break;
+  case DIGITAL_READ:
+    Serial.println(digitalRead(arg1));
+    break;
+  case ANALOG_WRITE:
+    analogWrite(arg1, arg2);
+    Serial.println("OK"); 
+    break;
+  case DIGITAL_WRITE:
+    if (arg2 == 0) digitalWrite(arg1, LOW);
+    else if (arg2 == 1) digitalWrite(arg1, HIGH);
+    Serial.println("OK"); 
+    break;
+  case PIN_MODE:
+    if (arg2 == 0) pinMode(arg1, INPUT);
+    else if (arg2 == 1) pinMode(arg1, OUTPUT);
+    Serial.println("OK");
+    break;
+  case SONAR_PING:
+    Serial.println(Ping(arg1));
+    break;
+#ifdef ARTICUBOTS_USE_SERVOS
+  case SERVO_WRITE:
+    servos[arg1].setTargetPosition(arg2);
+    Serial.println("OK");
+    break;
+  case SERVO_READ:
+    Serial.println(servos[arg1].getServo().read());
+    break;
+#endif
+    
+#ifdef ARTICUBOTS_USE_BASE
+  case READ_ENCODERS:
+    Serial.print(readEncoder(LEFT));
+    Serial.print(" ");
+    Serial.println(readEncoder(RIGHT));
+    break;
+   case RESET_ENCODERS:
+    resetEncoders();
+    resetPID();
+    Serial.println("OK");
+    break;
+  case MOTOR_SPEEDS:
+    /* Reset the auto stop timer */
+    lastMotorCommandMs = millis();
+    if (arg1 == 0 && arg2 == 0) {
+      setMotorSpeeds(0, 0);
+      resetPID();
+      moving = 0;
+    }
+    else moving = 1;
+    //leftPID.TargetTicksPerFrame = arg1;
+    desiredSpeedL = arg1;
+    //rightPID.TargetTicksPerFrame = arg2;
+    desiredSpeedR = arg2;
+    Serial.println("OK"); 
+    break;
+  case MOTOR_RAW_PWM:
+    /* Reset the auto stop timer */
+    lastMotorCommandMs = millis();
+    resetPID();
+    moving = 0; // Sneaky way to temporarily disable the PID
+    setMotorSpeeds(arg1, arg2);
+    Serial.println("OK"); 
+    break;
+  case UPDATE_PID:
+    while ((str = strtok_r(p, ":", &p)) != NULL) {
+       pid_args[i] = atoi(str);
+       i++;
+    }
+    /*    
+    Kp = pid_args[0];
+    Kd = pid_args[1];
+    Ki = pid_args[2];
+    Ko = pid_args[3];
+    */
+    Serial.println("OK");
+    break;
+#endif
+  default:
+    Serial.println("Invalid Command");
+    break;
+  }
+}
+
+long Ping(int pin) {
+  return 100; // cm
+}
+
+/* Wrap the encoder reading function */
+long readEncoder(int i) {
+  if (i == LEFT) return Ldistance;
+  else return Rdistance;
+}
+
+/* Wrap the encoder reset function */
+void resetEncoder(int i) {
+  if (i == LEFT){
+    Ldistance = 0;
+    LdistancePrev = 0;
+    return;
+  } else { 
+    Rdistance = 0;
+    RdistancePrev = 0;
+    return;
+  }
+}
+
+/* Wrap the encoder reset function */
+void resetEncoders() {
+  resetEncoder(LEFT);
+  resetEncoder(RIGHT);
+}
+
+void resetPID() {
+}
+
+/* Wrap the drive motor set speed function */
+void setMotorSpeed(int i, int spd) {
+  if (i == LEFT) desiredSpeedL = spd;
+  else desiredSpeedR = spd;
+}
+
+// A convenience function for setting both motor speeds
+void setMotorSpeeds(int leftSpeed, int rightSpeed) {
+  setMotorSpeed(LEFT, leftSpeed);
+  setMotorSpeed(RIGHT, rightSpeed);
+}
+
+#endif // COMM_ARTICUBOTS
 
 #ifdef COMM_ELEMENT
 
@@ -32,7 +288,7 @@ void readCommCommand()
       resetEma(RightMotorChannel);
       resetEma(LeftMotorChannel);
       EncodersReset();
-      lastComm = millis();
+      lastCommMs = millis();
     }
     else
     {
@@ -49,7 +305,7 @@ void readCommCommand()
       tokens[i] = strtok(chars, sep);
       if (tokens[i] == NULL)
       {
-        return;
+        return ret;
       }
 
       while (i < 5 && tokens[i] != NULL)
@@ -65,7 +321,7 @@ void readCommCommand()
       {
         //Serial.println("OK: cfg");
         COMM_SERIAL.print("\r\nACK\r\n>");
-        lastComm = millis();
+        lastCommMs = millis();
       }
       else if (!strcmp(tokens[0], "compass"))
       {
@@ -73,7 +329,7 @@ void readCommCommand()
         COMM_SERIAL.print("\r\n");
         COMM_SERIAL.print(compassYaw);
         COMM_SERIAL.print("\r\n>");
-        lastComm = millis();
+        lastCommMs = millis();
       }
       else if (!strcmp(tokens[0], "psonar"))
       {
@@ -87,7 +343,7 @@ void readCommCommand()
         COMM_SERIAL.print(" ");
         COMM_SERIAL.print(rangeBLcm);
         COMM_SERIAL.print("\r\n>");
-        lastComm = millis();
+        lastCommMs = millis();
       }
       else if (!strcmp(tokens[0], "sensor"))
       {
@@ -108,7 +364,7 @@ void readCommCommand()
             COMM_SERIAL.print("\r\n>");
             break;
         }
-        lastComm = millis();
+        lastCommMs = millis();
       }
       else if (!strcmp(tokens[0], "odomreset"))
       {
@@ -116,7 +372,7 @@ void readCommCommand()
         X = Y = Theta = 0.0;
         Ldistance = Rdistance = 0;
         COMM_SERIAL.print("\r\nACK\r\n>");
-        lastComm = millis();
+        lastCommMs = millis();
       }
       else if (!strcmp(tokens[0], "odom"))
       {
@@ -131,12 +387,12 @@ void readCommCommand()
         COMM_SERIAL.print(" ");
         COMM_SERIAL.print(Theta);
         COMM_SERIAL.print("\r\n>");
-        lastComm = millis();
+        lastCommMs = millis();
       }
       else if (!strcmp(tokens[0], "gps"))
       {
         COMM_SERIAL.print("\r\n");
-        if ((millis() - lastGpsData) > 2000 || gpsFix == 0)
+        if ((millis() - lastGpsDataMs) > 2000 || gpsFix == 0)
         {
           COMM_SERIAL.print("0\r\n>");
         }
@@ -146,14 +402,14 @@ void readCommCommand()
           COMM_SERIAL.print(" ");
           COMM_SERIAL.print(gpsSat);
           COMM_SERIAL.print(" ");
-          COMM_SERIAL.print(millis() - lastGpsData);
+          COMM_SERIAL.print(millis() - lastGpsDataMs);
           COMM_SERIAL.print(" ");
           COMM_SERIAL.print(gpsHdop);
           COMM_SERIAL.print(" ");
           COMM_SERIAL.print(longlat);
           COMM_SERIAL.print("\r\n>");
         }
-        lastComm = millis();
+        lastCommMs = millis();
       }
       else if (!strcmp(tokens[0], "srf04"))
       {
@@ -161,7 +417,7 @@ void readCommCommand()
         COMM_SERIAL.print("\r\n"); 
         COMM_SERIAL.print(200 + j); 
         COMM_SERIAL.print("\r\n>");
-        lastComm = millis();
+        lastCommMs = millis();
       }
       else if (!strcmp(tokens[0], "getenc"))
       {
@@ -182,7 +438,7 @@ void readCommCommand()
             COMM_SERIAL.print("\r\n0\r\n>");
             break;
         }
-        lastComm = millis();
+        lastCommMs = millis();
       }
       else if (!strcmp(tokens[0], "pwm"))
       {
@@ -226,8 +482,8 @@ void readCommCommand()
                 break;
             }
           }
-          lastComm = millis();
-          lastPwm = lastComm;
+          lastCommMs = millis();
+          lastMotorCommandMs = lastCommMs;
         }
         else
         {
@@ -238,7 +494,7 @@ void readCommCommand()
       {
         //Serial.println("OK: vel");
         COMM_SERIAL.print("\r\n0 0 \r\n>");
-        lastComm = millis();
+        lastCommMs = millis();
       }
       //else
       //{
@@ -248,16 +504,18 @@ void readCommCommand()
   }
   if (++j > 50)  // sensor "randomizer" for srf04 debugging
     j = 0;
+
 }
 #endif // COMM_ELEMENT
 
 #ifdef COMM_SIMPLE
-void control()
+void readCommCommand()
 {
   if (COMM_SERIAL.available())
   {
     int val;
     val = COMM_SERIAL.read();
+    lastCommMs = millis();
     switch (val)
     {
       case 'a':   // forward
@@ -345,6 +603,6 @@ void readGpsUplink()
       //Serial.println(longlat);
     }
 
-    lastGpsData = millis();
+    lastGpsDataMs = millis();
   }
 }
