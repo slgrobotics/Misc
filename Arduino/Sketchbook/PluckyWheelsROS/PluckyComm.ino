@@ -18,6 +18,7 @@ void InitSerial()
 
 #ifdef COMM_ARTICUBOTS
   COMM_SERIAL.begin(BAUDRATE_ARTICUBOTS);   // start serial for USB to Raspberry Pi
+  //COMM_SERIAL.setTimeout(1);  
 #else
   //Serial.begin(115200);     // start serial for USB
   COMM_SERIAL.begin(115200);  // start serial for Funduino Bluetooth XBee
@@ -52,139 +53,185 @@ void InitSerial()
 
 unsigned char moving = 0; // is the base in motion?
 
-// A pair of varibles to help parse serial commands (thanks Fergs)
-int arg = 0;
-int index = 0;
-
-// Variable to hold an input character
-char chr;
-
 // Variable to hold the current single-character command
 char cmd;
-
-// Character arrays to hold the first and second arguments
-char argv1[16];
-char argv2[16];
 
 // The arguments converted to integers
 long arg1;
 long arg2;
 
+char pid_args_str[64];
+char out_buf[64];
+
+void respond()
+{
+  COMM_SERIAL.print(out_buf);
+}
+
+void respond_OK()
+{
+  COMM_SERIAL.print("OK\r");
+}
+
+void respond_ERROR()
+{
+  COMM_SERIAL.print("Invalid Command\r");
+}
+
 void readCommCommand()
 {
-  while (COMM_SERIAL.available())
+  unsigned long now = millis();
+  if (COMM_SERIAL.available())
   {
-    // Read the next character
-    chr = Serial.read();
-    lastCommMs = millis();
+    String strs[20];
+    int StringCount = 0;
 
-    // Terminate a command with a CR
-    if (chr == 13) {
-      if (arg == 1) argv1[index] = '\0';
-      else if (arg == 2) argv2[index] = '\0';
-      runCommand();
-      resetCommand();
-    }
-    // Use spaces to delimit parts of the command
-    else if (chr == ' ') {
-      // Step through the arguments
-      if (arg == 0) arg = 1;
-      else if (arg == 1)  {
-        argv1[index] = '\0';
-        arg = 2;
-        index = 0;
+    String cmd_in = COMM_SERIAL.readStringUntil('\r'); // Command is terminated with a CR
+    cmd_in.trim();
+    //Serial.println(cmd_in);
+
+    if(cmd_in.length() == 0)
+      return;    // ignore empty strings
+
+    // Split the string into substrings:
+    while (cmd_in.length() > 0)
+    {
+      int index = cmd_in.indexOf(' ');
+      if (index == -1) // No space found
+      {
+        strs[StringCount++] = cmd_in;
+        break;
       }
-      continue;
-    }
-    else {
-      if (arg == 0) {
-        // The first arg is the single-letter command
-        cmd = chr;
-      }
-      else if (arg == 1) {
-        // Subsequent arguments can be more than one character
-        argv1[index] = chr;
-        index++;
-      }
-      else if (arg == 2) {
-        argv2[index] = chr;
-        index++;
+      else
+      {
+        if(StringCount == 0 && index != 1) {  // expect only single character commands
+          //COMM_SERIAL.println("Error: not a command");
+          respond_ERROR();
+          return;
+        }
+        strs[StringCount++] = cmd_in.substring(0, index);
+        cmd_in = cmd_in.substring(index+1);
       }
     }
+
+    cmd = strs[0].charAt(0);
+    out_buf[0] = '\0';
+
+    //Serial.println(StringCount);
+
+    switch(StringCount) {
+      case 1:   // just the command, like "e"
+        runCommand();
+        resetCommand();
+        break;
+
+      case 2:   // command and one composite argument, possibly "u 30:20:0:100"
+        strs[1].toCharArray(pid_args_str,sizeof(pid_args_str));
+        runCommand();
+        resetCommand();
+        break;
+
+      case 3:   // command and two arguments, like "m 100 200"
+        arg1 = strs[1].toInt();
+        arg2 = strs[2].toInt();
+        runCommand();
+        resetCommand();
+        break;
+
+      default:
+        // something wrong, keep looking for a valid string
+        //COMM_SERIAL.println("Error: wrong number of arguments");
+        respond_ERROR();
+        return;
+    }
+    
+    /*    
+    // Show the resulting substrings
+    for (int i = 0; i < StringCount; i++)
+    {
+      Serial.print(i);
+      Serial.print(": \"");
+      Serial.print(strs[i]);
+      Serial.println("\"");
+    }
+    */
   }
 }
 
 /* Clear the current command parameters */
 void resetCommand() {
   cmd = '\0';
-  memset(argv1, 0, sizeof(argv1));
-  memset(argv2, 0, sizeof(argv2));
+  pid_args_str[0] = '\0';
   arg1 = 0;
   arg2 = 0;
-  arg = 0;
-  index = 0;
 }
 
 /* Run a command.  Commands are defined in commands.h */
-int runCommand() {
-  int i = 0;
-  char *p = argv1;
-  char *str;
-  int pid_args[4];
-  arg1 = atoi(argv1);
-  arg2 = atoi(argv2);
-  
+void runCommand() {
+
+  //Serial.print("runCommand: ");
+  //Serial.println(cmd);
+
+  lastCommMs = millis();
+
   switch(cmd) {
   case GET_BAUDRATE:
-    Serial.println(BAUDRATE_ARTICUBOTS);
+    sprintf(out_buf, "%d\r", BAUDRATE_ARTICUBOTS);
+    respond();
     break;
   case ANALOG_READ:
-    Serial.println(analogRead(arg1));
+    sprintf(out_buf, "%d\r", analogRead(arg1));
+    respond();
     break;
   case DIGITAL_READ:
-    Serial.println(digitalRead(arg1));
+    sprintf(out_buf, "%d\r", digitalReadFast(arg1));
+    respond();
     break;
   case ANALOG_WRITE:
     analogWrite(arg1, arg2);
-    Serial.println("OK"); 
+    respond_OK(); 
     break;
   case DIGITAL_WRITE:
     if (arg2 == 0) digitalWrite(arg1, LOW);
     else if (arg2 == 1) digitalWrite(arg1, HIGH);
-    Serial.println("OK"); 
+    respond_OK(); 
     break;
   case PIN_MODE:
     if (arg2 == 0) pinMode(arg1, INPUT);
     else if (arg2 == 1) pinMode(arg1, OUTPUT);
-    Serial.println("OK");
+    respond_OK();
     break;
   case SONAR_PING:
-    Serial.println(Ping(arg1));
+    sprintf(out_buf, "%d\r", Ping(arg1));
+    respond();
     break;
 #ifdef ARTICUBOTS_USE_SERVOS
   case SERVO_WRITE:
     servos[arg1].setTargetPosition(arg2);
-    Serial.println("OK");
+    respond_OK();
     break;
   case SERVO_READ:
-    Serial.println(servos[arg1].getServo().read());
+    sprintf(out_buf, "%d\r", servos[arg1].getServo().read());
+    respond();
     break;
 #endif
     
 #ifdef ARTICUBOTS_USE_BASE
   case READ_ENCODERS:
-    Serial.print(readEncoder(LEFT));
-    Serial.print(" ");
-    Serial.println(readEncoder(RIGHT));
+    sprintf(out_buf, "%ld %ld\r", readEncoder(LEFT), readEncoder(RIGHT));
+    respond();
     break;
    case RESET_ENCODERS:
     resetEncoders();
     resetPID();
-    Serial.println("OK");
+    respond_OK();
     break;
   case MOTOR_SPEEDS:
     /* Reset the auto stop timer */
     lastMotorCommandMs = millis();
+    //Serial.print(arg1);
+    //Serial.print(" --- ");
+    //Serial.println(arg2);
     if (arg1 == 0 && arg2 == 0) {
       setMotorSpeeds(0, 0);
       resetPID();
@@ -195,7 +242,7 @@ int runCommand() {
     desiredSpeedL = arg1;
     //rightPID.TargetTicksPerFrame = arg2;
     desiredSpeedR = arg2;
-    Serial.println("OK"); 
+    respond_OK(); 
     break;
   case MOTOR_RAW_PWM:
     /* Reset the auto stop timer */
@@ -203,24 +250,38 @@ int runCommand() {
     resetPID();
     moving = 0; // Sneaky way to temporarily disable the PID
     setMotorSpeeds(arg1, arg2);
-    Serial.println("OK"); 
+    respond_OK(); 
     break;
   case UPDATE_PID:
-    while ((str = strtok_r(p, ":", &p)) != NULL) {
-       pid_args[i] = atoi(str);
-       i++;
+    {
+      char *p = pid_args_str;
+      char *str;
+      int i = 0;
+      int pid_args[4];
+
+      while ((str = strtok_r(p, ":", &p)) != NULL) {
+        pid_args[i] = atoi(str);
+        i++;
+      }
+
+      /*
+      Serial.print(pid_args[0]); Serial.print("|");
+      Serial.print(pid_args[1]); Serial.print("|");
+      Serial.print(pid_args[2]); Serial.print("|");
+      Serial.println(pid_args[3]);
+      /*
+      Kp = pid_args[0];
+      Kd = pid_args[1];
+      Ki = pid_args[2];
+      Ko = pid_args[3];
+      */
     }
-    /*    
-    Kp = pid_args[0];
-    Kd = pid_args[1];
-    Ki = pid_args[2];
-    Ko = pid_args[3];
-    */
-    Serial.println("OK");
+    respond_OK();
     break;
 #endif
+
   default:
-    Serial.println("Invalid Command");
+    respond_ERROR();
     break;
   }
 }
