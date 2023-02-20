@@ -90,8 +90,10 @@ void readCommCommand()
     cmd_in.trim();
     //Serial.println(cmd_in);
 
-    if(cmd_in.length() == 0)
+    if(cmd_in.length() == 0) {
+      respond_OK();      
       return;    // ignore empty strings
+    }
 
     // Split the string into substrings:
     while (cmd_in.length() > 0)
