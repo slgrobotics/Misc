@@ -11,6 +11,7 @@
 
 #define COMM_SERIAL Serial
 #define BAUDRATE_ARTICUBOTS 115200
+#define DO_RESPOND_OK
 
 void InitSerial()
 {
@@ -55,6 +56,7 @@ unsigned char moving = 0; // is the base in motion?
 
 // Variable to hold the current single-character command
 char cmd;
+String cmd_in;
 
 // The arguments converted to integers
 long arg1;
@@ -66,16 +68,21 @@ char out_buf[64];
 void respond()
 {
   COMM_SERIAL.print(out_buf);
+  COMM_SERIAL.flush(); // wait for the output stream to finish transmission
 }
 
-void respond_OK()
+void respond_OK(char rq_cmd)
 {
-  COMM_SERIAL.print("OK\r");
+#ifdef DO_RESPOND_OK
+  sprintf(out_buf, "%c OK\r", rq_cmd);
+  respond();
+#endif
 }
 
-void respond_ERROR()
+void respond_ERROR(String rq_cmd_in)
 {
-  COMM_SERIAL.print("Invalid Command\r");
+  sprintf(out_buf, "? Error: '%s'\r", rq_cmd_in);
+  respond();
 }
 
 void readCommCommand()
@@ -86,12 +93,12 @@ void readCommCommand()
     String strs[20];
     int StringCount = 0;
 
-    String cmd_in = COMM_SERIAL.readStringUntil('\r'); // Command is terminated with a CR
+    cmd_in = COMM_SERIAL.readStringUntil('\r'); // Command is terminated with a CR
     cmd_in.trim();
     //Serial.println(cmd_in);
 
     if(cmd_in.length() == 0) {
-      respond_OK();      
+      respond_OK('*');      
       return;    // ignore empty strings
     }
 
@@ -108,7 +115,7 @@ void readCommCommand()
       {
         if(StringCount == 0 && index != 1) {  // expect only single character commands
           //COMM_SERIAL.println("Error: not a command");
-          respond_ERROR();
+          respond_ERROR(cmd_in);
           return;
         }
         strs[StringCount++] = cmd_in.substring(0, index);
@@ -117,7 +124,9 @@ void readCommCommand()
     }
 
     cmd = strs[0].charAt(0);
-    out_buf[0] = '\0';
+    out_buf[0] = cmd;
+    out_buf[1] = ' ';
+    out_buf[2] = '\0';
 
     //Serial.println(StringCount);
 
@@ -143,7 +152,7 @@ void readCommCommand()
       default:
         // something wrong, keep looking for a valid string
         //COMM_SERIAL.println("Error: wrong number of arguments");
-        respond_ERROR();
+        respond_ERROR(cmd_in);
         return;
     }
     
@@ -178,55 +187,55 @@ void runCommand() {
 
   switch(cmd) {
   case GET_BAUDRATE:
-    sprintf(out_buf, "%d\r", BAUDRATE_ARTICUBOTS);
+    sprintf(&out_buf[2], "%ld\r", BAUDRATE_ARTICUBOTS);
     respond();
     break;
   case ANALOG_READ:
-    sprintf(out_buf, "%d\r", analogRead(arg1));
+    sprintf(&out_buf[2], "%d\r", analogRead(arg1));
     respond();
     break;
   case DIGITAL_READ:
-    sprintf(out_buf, "%d\r", digitalReadFast(arg1));
+    sprintf(&out_buf[2], "%d\r", digitalReadFast(arg1));
     respond();
     break;
   case ANALOG_WRITE:
     analogWrite(arg1, arg2);
-    respond_OK(); 
+    respond_OK(cmd); 
     break;
   case DIGITAL_WRITE:
     if (arg2 == 0) digitalWrite(arg1, LOW);
     else if (arg2 == 1) digitalWrite(arg1, HIGH);
-    respond_OK(); 
+    respond_OK(cmd); 
     break;
   case PIN_MODE:
     if (arg2 == 0) pinMode(arg1, INPUT);
     else if (arg2 == 1) pinMode(arg1, OUTPUT);
-    respond_OK();
+    respond_OK(cmd);
     break;
   case SONAR_PING:
-    sprintf(out_buf, "%d\r", Ping(arg1));
+    sprintf(&out_buf[2], "%d\r", Ping(arg1));
     respond();
     break;
 #ifdef ARTICUBOTS_USE_SERVOS
   case SERVO_WRITE:
     servos[arg1].setTargetPosition(arg2);
-    respond_OK();
+    respond_OK(cmd);
     break;
   case SERVO_READ:
-    sprintf(out_buf, "%d\r", servos[arg1].getServo().read());
+    sprintf(&out_buf[2], "%d\r", servos[arg1].getServo().read());
     respond();
     break;
 #endif
     
 #ifdef ARTICUBOTS_USE_BASE
   case READ_ENCODERS:
-    sprintf(out_buf, "%ld %ld\r", readEncoder(LEFT), readEncoder(RIGHT));
+    sprintf(&out_buf[2], "%ld %ld\r", readEncoder(LEFT), readEncoder(RIGHT));
     respond();
     break;
    case RESET_ENCODERS:
     resetEncoders();
     resetPID();
-    respond_OK();
+    respond_OK(cmd);
     break;
   case MOTOR_SPEEDS:
     /* Reset the auto stop timer */
@@ -244,7 +253,7 @@ void runCommand() {
     desiredSpeedL = arg1;
     //rightPID.TargetTicksPerFrame = arg2;
     desiredSpeedR = arg2;
-    respond_OK(); 
+    respond_OK(cmd); 
     break;
   case MOTOR_RAW_PWM:
     /* Reset the auto stop timer */
@@ -252,7 +261,7 @@ void runCommand() {
     resetPID();
     moving = 0; // Sneaky way to temporarily disable the PID
     setMotorSpeeds(arg1, arg2);
-    respond_OK(); 
+    respond_OK(cmd); 
     break;
   case UPDATE_PID:
     {
@@ -278,12 +287,12 @@ void runCommand() {
       Ko = pid_args[3];
       */
     }
-    respond_OK();
+    respond_OK(cmd);
     break;
 #endif
 
   default:
-    respond_ERROR();
+    respond_ERROR(cmd_in);
     break;
   }
 }

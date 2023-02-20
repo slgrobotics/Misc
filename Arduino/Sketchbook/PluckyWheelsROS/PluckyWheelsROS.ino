@@ -160,6 +160,9 @@ int printLoopCnt = 0;
 
 void loop() //Main Loop
 {
+  //readCommCommand();  // reads desiredSpeed and reports odometry
+  //return;
+
 /* 
   // test - direct motor PWM control:
 
