@@ -37,6 +37,8 @@ void InitSerial()
 #define PIN_MODE       'c'
 #define DIGITAL_READ   'd'
 #define READ_ENCODERS  'e'
+#define READ_GPS       'g'
+#define READ_HEALTH    'h'
 #define MOTOR_SPEEDS   'm'
 #define MOTOR_RAW_PWM  'o'
 #define SONAR_PING     'p'
@@ -63,7 +65,7 @@ long arg1;
 long arg2;
 
 char pid_args_str[64];
-char out_buf[64];
+char out_buf[128];
 
 void respond()
 {
@@ -213,7 +215,9 @@ void runCommand() {
     respond_OK(cmd);
     break;
   case SONAR_PING:
-    sprintf(&out_buf[2], "%d\r", Ping(arg1));
+    receiveI2cSonarPacket();
+    // reported 255 if out of range, otherwise range in centimeters:
+    sprintf(&out_buf[2], "%d %d %d %d\r", rangeFRcm, rangeFLcm, rangeBRcm, rangeBLcm);
     respond();
     break;
 #ifdef ARTICUBOTS_USE_SERVOS
@@ -236,6 +240,23 @@ void runCommand() {
     resetEncoders();
     resetPID();
     respond_OK(cmd);
+    break;
+  case READ_GPS:
+    receiveI2cCompassPacket();
+    // Serial.print("longlat: ");
+    // Serial.print(longlat);
+    // Serial.print("   lastCompassYaw: ");
+    // Serial.println(lastCompassYaw);
+    sprintf(&out_buf[2], "%d %d %d %ld %s %d\r", gpsFix, gpsSat, gpsHdop, (long)(millis() - lastGpsDataMs), longlat.c_str(), (int)round(lastCompassYaw));
+    respond();
+    break;
+  case READ_HEALTH:
+    {
+      long bat = analogRead(batteryInPin); // "800" here relates to battery voltage 11.72V = 3.90V per cell
+      bat = bat * 39 / 8; // millivolts, returns "4031" for 4.031V per cell
+      sprintf(&out_buf[2], "%ld %d\r", bat, freeRam());
+      respond();
+    }
     break;
   case MOTOR_SPEEDS:
     /* Reset the auto stop timer */
@@ -295,10 +316,6 @@ void runCommand() {
     respond_ERROR(cmd_in);
     break;
   }
-}
-
-long Ping(int pin) {
-  return 100; // cm
 }
 
 /* Wrap the encoder reading function */
@@ -425,7 +442,7 @@ void readCommCommand()
         {
           case 5: // battery
             COMM_SERIAL.print("\r\n");
-            //Serial.print(800);    // "800" here relates to battery voltage 11.72V = 3.91V per cell
+            //Serial.print(800);    // "800" here relates to battery voltage 11.72V = 3.90V per cell
             COMM_SERIAL.print(analogRead(batteryInPin));
             COMM_SERIAL.print("\r\n>");
             break;
@@ -671,6 +688,7 @@ void readGpsUplink()
     if (strncmp(gpsChars, "LOC", 3) == 0)
     {
       longlat = str.substring(4);
+      longlat.trim();
       //Serial.print("longlat: ");
       //Serial.println(longlat);
     }

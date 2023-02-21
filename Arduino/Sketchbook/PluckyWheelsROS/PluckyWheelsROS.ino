@@ -2,6 +2,7 @@
 //#define USE_EMA
 
 #include <digitalWriteFast.h>
+#include "freeram.h"
 #include <Wire.h>
 //#include "I2Cdev.h"
 
@@ -18,9 +19,9 @@ const int blueLedPin = 50;
 const int greenLedPin = 53;
 const int whiteLedPin = 52;
 
-const int batteryInPin = A3;  // Analog input pin that the battery 1/3 divider is attached to
+const int batteryInPin = A3;  // Analog input pin that the battery 1/3 divider is attached to. "800" = 3.90V per cell.
 
-#define SONAR_I2C_ADDRESS 9   // parking sonar sensor, driven by Arduino Pro Mini
+#define SONAR_I2C_ADDRESS 9   // parking sonar sensor, driven by Arduino Pro Mini (ParkingSensorI2C.ino)
 
 const int mydt = 5;           // 5 milliseconds make for 200 Hz operating cycle
 const int pidLoopFactor = 20; // factor of 20 make for 100ms PID cycle
@@ -72,13 +73,13 @@ DifferentialDriveOdometry *odometry;
 PID myPID_R(&speedMeasured_R, &dpwm_R, &setpointSpeedR, 1.0, 0, 0.05, DIRECT);    // in, out, setpoint, double Kp, Ki, Kd, DIRECT or REVERSE
 PID myPID_L(&speedMeasured_L, &dpwm_L, &setpointSpeedL, 1.0, 0, 0.05, DIRECT);
 
-// received from parking sonar sensor Slave, readings in centimeters:
+// received from parking sonar sensor Slave, readings in centimeters (receiveI2cSonarPacket() must be called):
 volatile int rangeFRcm;
 volatile int rangeFLcm;
 volatile int rangeBRcm;
 volatile int rangeBLcm;
 
-// delivered by MotionPlug via I2C:
+// delivered by MotionPlug via I2C (receiveI2cCompassPacket() must be called):
 double compassYaw = 0.0;
 
 int gpsFix = 0;
@@ -160,9 +161,6 @@ int printLoopCnt = 0;
 
 void loop() //Main Loop
 {
-  //readCommCommand();  // reads desiredSpeed and reports odometry
-  //return;
-
 /* 
   // test - direct motor PWM control:
 

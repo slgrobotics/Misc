@@ -16,6 +16,7 @@ void receiveI2cCompassPacket()
   {
     lastCompassYaw = compassYaw;
     lastImuMs = millis();
+    //Serial.println(lastCompassYaw);
   }
 }
 
