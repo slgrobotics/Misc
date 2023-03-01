@@ -254,7 +254,8 @@ void runCommand() {
     {
       long bat = analogRead(batteryInPin); // "800" here relates to battery voltage 11.72V = 3.90V per cell
       bat = bat * 39 / 8; // millivolts, returns "4031" for 4.031V per cell
-      sprintf(&out_buf[2], "%ld %d\r", bat, freeRam());
+      int current_ma = 1234; // TODO: need to measure it
+      sprintf(&out_buf[2], "%ld %d %d\r", bat, current_ma, freeRam());
       respond();
     }
     break;
@@ -270,6 +271,14 @@ void runCommand() {
       moving = 0;
     }
     else moving = 1;
+
+    // desiredSpeed* is in the range -100...100 - it has a meaning of "percent of max possible speed".
+    // it must be scaled if ticks/sec or rad/sec or m/sec is desired.
+    // For Plucky full wheel rotation takes 3.8 seconds. So, with R_wheel = 0.192m max speed is:
+    //   - 0.317 m/sec
+    //   - 1.65 rad/sec
+    //   - 660 encoder ticks/sec
+
     //leftPID.TargetTicksPerFrame = arg1;
     desiredSpeedL = arg1;
     //rightPID.TargetTicksPerFrame = arg2;

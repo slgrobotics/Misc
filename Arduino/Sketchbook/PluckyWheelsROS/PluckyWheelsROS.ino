@@ -38,12 +38,19 @@ double dpwm_R, dpwm_L;  // correction output, calculated by PID, constrained -25
 double speedMeasured_R = 0;  // percent of max speed for this drive configuration.
 double speedMeasured_L = 0;
 
-// desired speed can be set joystick:
-// comes in the range -100...100 - it has a meaning of "percent of max speed":
+long distR; // ticks per 100ms cycle, as measured
+long distL;
+
+// desired speed can be set by joystick:
 double joystickSpeedR = 0.0;
 double joystickSpeedL = 0.0;
 
-// desired speed is set by Comm:
+// desired speed is set by Comm or Joystick.
+// comes in the range -100...100 - it has a meaning of "percent of max possible speed":
+// For Plucky full wheel rotation takes 3.8 seconds. So, with R_wheel = 0.192m max speed is:
+//   - 0.317 m/sec
+//   - 1.65 rad/sec
+//   - 660 encoder ticks/sec
 double desiredSpeedR = 0.0;
 double desiredSpeedL = 0.0;
 
@@ -213,6 +220,14 @@ void loop() //Main Loop
   if(isPrintLoop)
   {
     printLoopCnt = 0;
+    /*    
+    Serial.print("Dist/cycle: ");
+    Serial.print(distR);
+    Serial.print("   Desired: ");
+    Serial.print(desiredSpeedR);
+    Serial.print("   Measured: ");
+    Serial.println(speedMeasured_R);
+    */
     printAll();    // takes 34ms and completely stops the 5ms cycle
   }
 #endif
@@ -257,6 +272,12 @@ void loop() //Main Loop
     
     // Calculate the pwm, given the desired speed (pick up values computed by PIDs):
     pwm_calculate();
+
+    // if(abs(pwm_R) > 250 || abs(desiredSpeedR - speedMeasured_R) > 3) {
+    //   Serial.print(speedMeasured_R);
+    //   Serial.print("  ");
+    //   Serial.println(pwm_R);
+    // }      
 
     // test: At both motors set to +80 expect Ldistance and Rdistance to increase
     //pwm_R = 80;

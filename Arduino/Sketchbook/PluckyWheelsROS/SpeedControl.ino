@@ -1,17 +1,14 @@
 
-long distR;
-long distL;
-
 // speed control is based on measuring ticks per cycle (say, 100ms), scaling to 100% and feeding it to PID which has a setting of 0...100 also in %
 // for a drive configuration (particular robot) we need to measure ticks per cycle when on full power and wheels in the air.
 
 void speed_calculate()
 {
-  distR = Rdistance - RdistancePrev; // around 13 with 20Hz cycle, 65 with 10Hz cycle, full power and wheels in the air
+  distR = Rdistance - RdistancePrev; // Plucky robot: ~80 with 10Hz cycle, at full power (pwm=255) and wheels in the air
   distL = Ldistance - LdistancePrev;
 
-  speedMeasured_R = (double)map(distR, -65, 65, -100, 100);  // first pair is number of ticks at full speed, we map it to 100%
-  speedMeasured_L = (double)map(distL, -65, 65, -100, 100);
+  speedMeasured_R = (double)map(distR, -80, 80, -100, 100);  // first pair is number of ticks at full speed, we map it to 100%
+  speedMeasured_L = (double)map(distL, -80, 80, -100, 100);
 
   RdistancePrev = Rdistance;
   LdistancePrev = Ldistance;
