@@ -1,27 +1,41 @@
 //#define TRACE
 //#define USE_EMA
 
-#include <digitalWriteFast.h>
+#include <digitalWriteFast.h>  // library for high performance reads and writes by jrraines
+                               // see http://www.arduino.cc/cgi-bin/yabb2/YaBB.pl?num=1267553811/0
+                               // and http://code.google.com/p/digitalwritefast/
+                               // and http://www.hessmer.org/blog/2011/01/30/quadrature-encoder-too-fast-for-arduino/
+
 #include "freeram.h"
-#include <Wire.h>
-//#include "I2Cdev.h"
 
 #include <Odometry.h>
 #include <PID_v1.h>
-#include "mpu.h"        // MotionPlug
 
-const int ledPin = 13;    // Arduino UNO Yellow LED
+//
+// this code is written for Arduino Mega 2560 and heavily relies on timers 4 and 5, PWM pins 44,45
+//                 - see setTimerForPWM() in Motors section.
+// Serial3 (pins 14,15) is connected to BLE-LINK module.
+// DFrobot.com is the source of original code and their "6 DOF IMU Shield" is used here.
+//
+// As of 2024-06-24 this code is deployed on Dragger robot and works with its joystick and ROS
+//
+// Sergei Grichine - slg@quakemap.com
+//
+
+
+//const int ledPin = LED_BUILTIN;    // Arduino UNO/Mega Yellow built-in LED (pin 13)
+const int buzzerPin   = 13;   // Connected to a BC547 transistor - there is a protection diode at the buzzer as well
 
 // diagnostic LEDs:
-const int redLedPin = 49;
-const int yellowLedPin = 51;
-const int blueLedPin = 50;
-const int greenLedPin = 53;
-const int whiteLedPin = 52;
+const int redLedPin   = 33;
+//const int yellowLedPin = 51; TBD
+const int greenLedPin = 35;
+const int blueLedPin  = 31;
+//const int whiteLedPin = 52; TBD
 
-const int batteryInPin = A3;  // Analog input pin that the battery 1/3 divider is attached to. "800" = 3.90V per cell.
+// TBD: const int batteryInPin = A4;  // Analog input pin that the battery 1/3 divider is attached to. "800" = 3.90V per cell.
 
-#define SONAR_I2C_ADDRESS 9   // parking sonar sensor, driven by Arduino Pro Mini (ParkingSensorI2C.ino)
+// TBD: #define SONAR_I2C_ADDRESS 9   // parking sonar sensor, driven by Arduino Pro Mini (ParkingSensorI2C.ino)
 
 const int mydt = 5;           // 5 milliseconds make for 200 Hz operating cycle
 const int pidLoopFactor = 20; // factor of 20 make for 100ms PID cycle
@@ -33,7 +47,7 @@ volatile long long Ldistance, Rdistance;   // encoders - distance traveled, in t
 long long LdistancePrev = 0;   // last encoders values - distance traveled, in ticks
 long long RdistancePrev = 0;
 
-int pwm_R, pwm_L;       // pwm -255..255 sent to H-Bridge pins (will be constrained by set_motor()) 
+double pwm_R, pwm_L;    // pwm -255..255 accumulated here and ultimately sent to H-Bridge pins (will be constrained by set_motor()) 
 double dpwm_R, dpwm_L;  // correction output, calculated by PID, constrained -250..250 normally, will be added to the above
 
 double speedMeasured_R = 0;  // percent of max speed for this drive configuration.
@@ -42,16 +56,17 @@ double speedMeasured_L = 0;
 long distR; // ticks per 100ms cycle, as measured
 long distL;
 
-// desired speed can be set by joystick:
+// desired speed can be set joystick:
+// comes in the range -100...100 - it has a meaning of "percent of max speed":
 double joystickSpeedR = 0.0;
 double joystickSpeedL = 0.0;
 
 // desired speed is set by Comm or Joystick.
 // comes in the range -100...100 - it has a meaning of "percent of max possible speed":
-// For Plucky full wheel rotation takes 3.8 seconds. So, with R_wheel = 0.192m max speed is:
-//   - 0.317 m/sec
-//   - 1.65 rad/sec
-//   - 660 encoder ticks/sec
+// For Dragger full wheel rotation takes 2.2 seconds. So, with R_wheel=0.192m dist=1.206m max speed is:
+//   - 0.548 m/sec (1.23 mph, 1.97 km/h)
+//   - 2.86 rad/sec
+//   - 6241 encoder ticks/sec
 double desiredSpeedR = 0.0;
 double desiredSpeedL = 0.0;
 
@@ -65,10 +80,10 @@ const int LeftMotorChannel = 1;
 // EMA period to smooth wheels movement. 100 is smooth but fast, 300 is slow.
 const int EmaPeriod = 20;
 
-// Plucky robot physical parameters:
-double wheelBaseMeters = 0.600;
+// Dragger robot physical parameters:
+double wheelBaseMeters = 0.580;
 double wheelRadiusMeters = 0.192;
-double encoderTicksPerRevolution = 2506; // now has 16T sprocket. Prior art - 47T sprocket: 853;  // one wheel rotation
+double encoderTicksPerRevolution = 13730; // one wheel rotation
 
 // current robot pose, updated by odometry:
 double X;      // meters
@@ -78,39 +93,24 @@ double Theta;  // radians, positive clockwise
 DifferentialDriveOdometry *odometry;
 
 // higher Ki causes residual rotation, higher Kd - jerking movement
-PID myPID_R(&speedMeasured_R, &dpwm_R, &setpointSpeedR, 1.0, 0, 0.05, DIRECT);    // in, out, setpoint, double Kp, Ki, Kd, DIRECT or REVERSE
-PID myPID_L(&speedMeasured_L, &dpwm_L, &setpointSpeedL, 1.0, 0, 0.05, DIRECT);
+PID myPID_R(&speedMeasured_R, &dpwm_R, &setpointSpeedR, 1.0, 0.0, 0.08, DIRECT);    // in, out, setpoint, double Kp, Ki, Kd, DIRECT or REVERSE
+PID myPID_L(&speedMeasured_L, &dpwm_L, &setpointSpeedL, 1.0, 0.0, 0.08, DIRECT);
 
-// received from parking sonar sensor Slave, readings in centimeters (receiveI2cSonarPacket() must be called):
+// received from parking sonar sensor I2C Slave, readings in centimeters (receiveI2cSonarPacket() must be called):
 volatile int rangeFRcm;
 volatile int rangeFLcm;
 volatile int rangeBRcm;
 volatile int rangeBLcm;
-
-// delivered by MotionPlug via I2C (receiveI2cCompassPacket() must be called):
-double compassYaw = 0.0;
-
-int gpsFix = 0;
-int gpsSat = 0;
-int gpsHdop = 0;
-String longlat = "";
-unsigned long lastGpsDataMs = 0; 
-
-char gpsChars[100];
-
-bool testDir = false;
 
 /* Stop the robot if it hasn't received a movement command
   in this number of milliseconds */
 unsigned long AUTO_STOP_INTERVAL = 2000;
 
 // milliseconds from last events:
-unsigned long lastImuMs = 0;
 unsigned long lastMotorCommandMs = 0;
 unsigned long lastCommMs = 0;
-unsigned long lastSonarMs = 0;
 
-// ------------------------------------------------------------------------------------------------------ //
+//-------------------------------------- End of variable definitions -----------------------------------------//
 
 unsigned long timer = 0;     // general purpose timer, microseconds
 unsigned long timer_old;
@@ -120,7 +120,9 @@ unsigned int lastLoopCnt = 0;
 
 void setup()
 {
-  InitSerial(); 
+  //Serial.begin(115200);   // start serial for USB
+
+  InitSerial(); // ArticuBots uplink, uses Serial/USB. Could use Serial3 for BLE-LINK on pins 14,15 ?
 
   InitLeds();
   
@@ -135,15 +137,17 @@ void setup()
   myPID_L.SetSampleTime(PID_SAMPLE_TIME);
   myPID_L.SetMode(AUTOMATIC);
 
-  InitializeI2c();
+  // enable pull-up resistor on RX3 pin to help bluetooth module with signal levels:
+  //pinMode(15, INPUT);  
+  //digitalWrite(15, HIGH);
 
-  mympu_open(200);   // see C:\Projects\Arduino\Sketchbook\MotionPlug    rate: Desired fifo rate (Hz), max 200
-
-  // ======================== init motors and encoders: ===================================
+  // DEBUG pins:
+  pinMode(10, OUTPUT);
+  pinMode(11, OUTPUT);
 
   MotorsInit();
-
-  EncodersInit();    // attach interrupts
+  
+  EncodersInit();	// Initialize the encoders - attach interrupts
 
   odometry = new DifferentialDriveOdometry();
   odometry->Init(wheelBaseMeters, wheelRadiusMeters, encoderTicksPerRevolution);
@@ -151,7 +155,10 @@ void setup()
   setEmaPeriod(RightMotorChannel, EmaPeriod);
   setEmaPeriod(LeftMotorChannel, EmaPeriod);
   
-  timer = micros();
+  pinMode(buzzerPin, OUTPUT);
+  shortBuzz();
+  
+  timer = micros(); 
   delay(20);
   loopCnt = 0;
 }
@@ -169,28 +176,6 @@ int printLoopCnt = 0;
 
 void loop() //Main Loop
 {
-/* 
-  // test - direct motor PWM control:
-
-  digitalWriteFast(RDIR, testDir ? LOW : HIGH);
-  analogWrite(RPWM, 200);
-
-  digitalWriteFast(LDIR, testDir ? HIGH : LOW);
-  analogWrite(LPWM, 200);
-
-  // test - motor PWM control via set_motors():
-//  pwm_R = 255;
-//  pwm_L = 255;
-//  set_motors();
-
-  printAll();
-  delay(3000);
-  testDir = !testDir;
-  return;
-  /**/
-  
-  //delay(1); // 1 ms
-
   // whole loop takes slightly over 3ms, with a bit less than 2ms left to idle
   
   // Wait here, if not time yet - we use a time fixed loop
@@ -198,14 +183,11 @@ void loop() //Main Loop
   {
     while((micros() - timer) < STD_LOOP_TIME)
     {
-      mympu_update();   // Main loop runs at 200Hz (mydt=5), to allow frequent sampling of AHRS
-
-      readGpsUplink();
-
       readCommCommand();  // reads desiredSpeed and reports odometry
     }
   }
   
+  //digitalWrite(10, HIGH);
   loopCnt++;
   timer_old = timer;
   timer = micros(); 
@@ -232,7 +214,7 @@ void loop() //Main Loop
     printAll();    // takes 34ms and completely stops the 5ms cycle
   }
 #endif
-  
+
   if(millis() - lastCommMs > AUTO_STOP_INTERVAL || millis() - lastMotorCommandMs > AUTO_STOP_INTERVAL)
   {
     // failsafe - Comm signal or motor command is not detected for more than a second
@@ -240,15 +222,15 @@ void loop() //Main Loop
   }
 
   // test - controller should hold this speed:
-  //desiredSpeedR = 20;
-  //desiredSpeedL = 20;
-  
+  //desiredSpeedR = 10;
+  //desiredSpeedL = 10;
+
   if(isControlByJoystick())
   {
-    // ignore Comm values and override by joystick on A0 and A1:
+    // ignore R/C values and override by joystick on A0 and A1:
 
     computeJoystickSpeeds();
-  
+    
     desiredSpeedL = joystickSpeedL;
     desiredSpeedR = joystickSpeedR;
   }
@@ -267,13 +249,13 @@ void loop() //Main Loop
   myPID_L.Compute();
 
   if(isPidLoop)  // we do speed PID and odometry calculation on a slower scale, about 20Hz
-  {
+  {  
     // based on PWM increments, calculate speed:
     speed_calculate();
     
     // Calculate the pwm, given the desired speed (pick up values computed by PIDs):
     pwm_calculate();
-
+  
     // if(abs(pwm_R) > 250 || abs(desiredSpeedR - speedMeasured_R) > 3) {
     //   Serial.print(speedMeasured_R);
     //   Serial.print("  ");
@@ -281,12 +263,15 @@ void loop() //Main Loop
     // }      
 
     // test: At both motors set to +80 expect Ldistance and Rdistance to increase
-    //pwm_R = 80;
-    //pwm_L = 80;
-    //pwm_L = 255;  // measure full speed distR and distL. See SpeedControl tab.
+    //pwm_R = 80.0;
+    //pwm_L = 80.0;
+    //if(!isControlByJoystick()) {
+    //  pwm_L = 255.0;  // measure full speed distR and distL. See SpeedControl tab.
+    //  pwm_R = 255.0;
+    //}
 
     set_motors();
-
+  
     // odometry calculation takes 28us
     //digitalWrite(10, HIGH);
     // process encoders readings into X, Y, Theta using odometry library:
@@ -309,11 +294,11 @@ void loop() //Main Loop
       Theta += odometry->displacement.halfPhi * 2.0;
     }
     //digitalWrite(10, LOW);
-
+    
     digitalWriteFast(redLedPin, millis() - lastCommMs > 1000 ? HIGH : LOW);
-    digitalWriteFast(yellowLedPin, millis() - lastImuMs > 1000 ? HIGH : LOW);
-    digitalWriteFast(whiteLedPin, millis() - lastMotorCommandMs > 1000 ? HIGH : LOW);
-    digitalWriteFast(blueLedPin, millis() - lastSonarMs > 1000 ? HIGH : LOW);
+    //digitalWriteFast(yellowLedPin, millis() - lastImuMs > 1000 ? HIGH : LOW);
+    //digitalWriteFast(whiteLedPin, millis() - lastMotorCommandMs > 1000 ? HIGH : LOW);
+    //digitalWriteFast(blueLedPin, millis() - lastSonarMs > 1000 ? HIGH : LOW);
 
     digitalWriteFast(greenLedPin,!digitalReadFast(greenLedPin));  // blinking at 10 Hz
     //digitalWriteFast(ledPin,!digitalReadFast(ledPin));
@@ -325,4 +310,23 @@ void loop() //Main Loop
   // mark how much time we spent:
   lastLoopUsefulTime = micros() - timer;
 
+  /*
+  if (lastLoopUsefulTime > STD_LOOP_TIME + STD_LOOP_TIME)
+  {
+    DbgRed(true);
+  }
+  
+  if(angle_prev != angle)
+  {
+    angle_prev = angle;
+    DbgGreen(true);
+  }
+  else
+  {
+    DbgGreen(false);
+  }
+  */
+  
+  // let operating environment work (maybe taking time) and reenter the loop()
+  //digitalWrite(10, LOW);
 }

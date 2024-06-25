@@ -48,9 +48,8 @@ void printAll()
   {
     lastPrintMillis = millis();
 
-
-    long Ldur = Ldistance;
-    long Rdur = Rdistance;
+    double Ldur = (double)Ldistance;
+    double Rdur = (double)Rdistance;
 
     Serial.print("-------------------- ");
     Serial.print((loopCnt - lastLoopCnt) / (PRINT_INTERVAL_MS / 1000));
