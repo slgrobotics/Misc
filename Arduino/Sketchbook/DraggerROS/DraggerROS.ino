@@ -6,10 +6,9 @@
                                // and http://code.google.com/p/digitalwritefast/
                                // and http://www.hessmer.org/blog/2011/01/30/quadrature-encoder-too-fast-for-arduino/
 
-#include "freeram.h"
-
 #include <Odometry.h>
 #include <PID_v1.h>
+//#include <PID_v1_bc.h>
 
 //
 // this code is written for Arduino Mega 2560 and heavily relies on timers 4 and 5, PWM pins 44,45
@@ -18,6 +17,8 @@
 // DFrobot.com is the source of original code and their "6 DOF IMU Shield" is used here.
 //
 // As of 2024-06-24 this code is deployed on Dragger robot and works with its joystick and ROS
+//
+// See https://github.com/slgrobotics/robots_bringup/tree/main/Docs/Dragger
 //
 // Sergei Grichine - slg@quakemap.com
 //
@@ -33,7 +34,7 @@ const int greenLedPin = 35;
 const int blueLedPin  = 31;
 //const int whiteLedPin = 52; TBD
 
-// TBD: const int batteryInPin = A4;  // Analog input pin that the battery 1/3 divider is attached to. "800" = 3.90V per cell.
+const int batteryInPin = A4;  // Analog input pin that the battery 1/3 divider is attached to. "900" = 13.713V
 
 // TBD: #define SONAR_I2C_ADDRESS 9   // parking sonar sensor, driven by Arduino Pro Mini (ParkingSensorI2C.ino)
 
@@ -233,6 +234,12 @@ void loop() //Main Loop
     
     desiredSpeedL = joystickSpeedL;
     desiredSpeedR = joystickSpeedR;
+
+  //  myPID_L.SetMode(MANUAL);  // Disables PID, input goes straight to PWM
+  //  myPID_R.SetMode(MANUAL);
+  //} else {
+  //  myPID_L.SetMode(AUTOMATIC);
+  //  myPID_R.SetMode(AUTOMATIC);
   }
 
 #ifdef USE_EMA

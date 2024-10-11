@@ -2,6 +2,13 @@
 // Remote control code
 // **************************
 
+// #include "freeram.h" - originally from MotionPlug library
+int freeRam () {
+  extern int __heap_start, *__brkval; 
+  int v; 
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+}
+
 //#define ARTICUBOTS_USE_SERVOS
 #define ARTICUBOTS_USE_BASE
 
@@ -131,8 +138,9 @@ void readCommCommand() {
         resetCommand();
         break;
 
-      case 2:  // command and one composite argument, possibly "u 30:20:0:100"
-        strs[1].toCharArray(pid_args_str, sizeof(pid_args_str));
+      case 2:  // command and one simple or composite argument
+        arg1 = strs[1].toInt(); // for commands like "a 4"
+        strs[1].toCharArray(pid_args_str, sizeof(pid_args_str)); // possibly like "u 30:20:0:100"
         runCommand();
         resetCommand();
         break;
@@ -252,10 +260,10 @@ void runCommand() {
       break;
     case READ_HEALTH:
       {
-        //long bat = analogRead(batteryInPin); // "800" here relates to battery voltage 11.72V = 3.90V per cell
-        //bat = bat * 39 / 8; // millivolts, returns "4031" for 4.031V per cell
-        long bat = 4031;
-        int current_ma = 1234;  // TODO: need to measure it
+        long bat = analogRead(batteryInPin); // "900" here relates to battery voltage 13.713V
+        bat = bat * 13713 / 900; // millivolts, returns "12000" for 12V
+        //long bat = 12000;
+        int current_ma = -1;  // TODO: need to measure it
         sprintf(&out_buf[2], "%ld %d %d\r", bat, current_ma, freeRam());
         respond();
       }
