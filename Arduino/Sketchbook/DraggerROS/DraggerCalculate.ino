@@ -25,15 +25,15 @@ void speed_calculate()
 // **********************************************
 void pwm_calculate()
 {
-      // pick up values computed by PIDs. We must do it in float:
-      pwm_R += (int)dpwm_R;
-      pwm_L += (int)dpwm_L;
+  // pick up values computed by PIDs. We must do it in float:
+  pwm_R += (int)dpwm_R;
+  pwm_L += (int)dpwm_L;
 
-      // do not allow float values to grow beyond motor maximums:
-      pwm_R = constrain(pwm_R, -255.0, 255.0);     // Maximum / Minimum Limitations
-      pwm_L = constrain(pwm_L, -255.0, 255.0);
-  
-      // we also let set_motor() constrain local integer ipwm_L and ipwm_R to -255...255
+  // do not allow float values to grow beyond motor maximums:
+  pwm_R = constrain(pwm_R, -255.0, 255.0);     // Maximum / Minimum Limitations
+  pwm_L = constrain(pwm_L, -255.0, 255.0);
+
+  // we also let set_motor() constrain local integer ipwm_L and ipwm_R to -255...255
 }
 
 // ------------------------------------------------------------------------------------------------------

@@ -17,13 +17,13 @@ const int ENCODER_R_B = 8;    // side R data
 void EncodersInit()
 {
   // Left encoder:
-  pinMode(ENCODER_L_A, INPUT_PULLUP); 
-  pinMode(ENCODER_L_B, INPUT_PULLUP); 
+  pinMode(ENCODER_L_A, INPUT_PULLUP);
+  pinMode(ENCODER_L_B, INPUT_PULLUP);
 
   // Right encoder:
-  pinMode(ENCODER_R_A, INPUT_PULLUP); 
-  pinMode(ENCODER_R_B, INPUT_PULLUP); 
-  
+  pinMode(ENCODER_R_A, INPUT_PULLUP);
+  pinMode(ENCODER_R_B, INPUT_PULLUP);
+
   EncodersReset();
 
   attachInterrupt(1, leftEncoder, CHANGE);   // int 1, pin D3  - left encoder interrupt
@@ -46,13 +46,13 @@ void EncodersReset()
 void leftEncoder()
 {
   // we spend around 10us in the interrupt, at approx 1kHz frequency at pwm=80
-  
-  //boolean vi = (PIND & _BV(PIND3)) == 0; // read pin D3 (PD3)   - works for UNO 
+
+  //boolean vi = (PIND & _BV(PIND3)) == 0; // read pin D3 (PD3)   - works for UNO
 
   boolean vi = digitalReadFast(ENCODER_L_A) == LOW;
   boolean vd = digitalReadFast(ENCODER_L_B) == HIGH;
-  
-  if(vi == vd)
+
+  if (vi == vd)
   {
     Ldistance--;
   } else {
@@ -63,13 +63,13 @@ void leftEncoder()
 void rightEncoder()
 {
   // we spend around 10us in the interrupt, at approx 1kHz frequency at pwm=80
-  
+
   //boolean vi = (PIND & _BV(PIND2)) == 0; // read pin D2 (PD2)   - works for UNO
-  
+
   boolean vi = digitalReadFast(ENCODER_R_A) == LOW;
   boolean vd = digitalReadFast(ENCODER_R_B) == HIGH;
-  
-  if(vi == vd)
+
+  if (vi == vd)
   {
     Rdistance--;
   } else {

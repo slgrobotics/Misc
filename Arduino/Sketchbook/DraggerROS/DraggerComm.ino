@@ -4,9 +4,9 @@
 
 // #include "freeram.h" - originally from MotionPlug library
 int freeRam () {
-  extern int __heap_start, *__brkval; 
-  int v; 
-  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
 //#define ARTICUBOTS_USE_SERVOS
@@ -145,15 +145,15 @@ void readCommCommand() {
         return;
     }
 
-    /*    
-    // Show the resulting substrings
-    for (int i = 0; i < StringCount; i++)
-    {
+    /*
+      // Show the resulting substrings
+      for (int i = 0; i < StringCount; i++)
+      {
       Serial.print(i);
       Serial.print(": \"");
       Serial.print(strs[i]);
       Serial.println("\"");
-    }
+      }
     */
   }
 }
@@ -248,8 +248,8 @@ void runCommand() {
         setMotorSpeeds(0, 0);
         resetPID();
         moving = 0;
-    }
-    else moving = 1;
+      }
+      else moving = 1;
 
       // desiredSpeed* is in the range -100...100 - it has a meaning of "percent of max possible speed".
       // For Dragger full wheel rotation takes 2.2 seconds. So, with R_wheel=0.192m dist=1.206m max speed is:
@@ -284,16 +284,16 @@ void runCommand() {
         }
 
         /*
-      Serial.print(pid_args[0]); Serial.print("|");
-      Serial.print(pid_args[1]); Serial.print("|");
-      Serial.print(pid_args[2]); Serial.print("|");
-      Serial.println(pid_args[3]);
-      /*
-      Kp = pid_args[0];
-      Kd = pid_args[1];
-      Ki = pid_args[2];
-      Ko = pid_args[3];
-      */
+          Serial.print(pid_args[0]); Serial.print("|");
+          Serial.print(pid_args[1]); Serial.print("|");
+          Serial.print(pid_args[2]); Serial.print("|");
+          Serial.println(pid_args[3]);
+          /*
+          Kp = pid_args[0];
+          Kd = pid_args[1];
+          Ki = pid_args[2];
+          Ko = pid_args[3];
+        */
       }
       respond_OK(cmd);
       break;

@@ -1,7 +1,7 @@
 
 void InitLeds()
 {
-// debugging LEDs:
+  // debugging LEDs:
   pinModeFast(redLedPin, OUTPUT);
   pinModeFast(blueLedPin, OUTPUT);
   pinModeFast(greenLedPin, OUTPUT);
@@ -40,7 +40,7 @@ void printAll()
   Serial.print(pwm_R);
   Serial.print("       Left pwm_L: ");
   Serial.println(pwm_L);
-  
+
   Serial.print("Joystick:   in control: ");
   Serial.print(isControlByJoystick());
   Serial.print("  pressed: ");
@@ -59,9 +59,9 @@ void printAll()
 void shortBuzz()
 {
   // TODO: use http://playground.arduino.cc/Code/Timer1
-  digitalWrite(buzzerPin,HIGH);
-  delay(100);  
-  digitalWrite(buzzerPin,LOW);
+  digitalWrite(buzzerPin, HIGH);
+  delay(100);
+  digitalWrite(buzzerPin, LOW);
 }
 
 // debugging LEDs:

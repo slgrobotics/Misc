@@ -2,9 +2,9 @@
 //#define USE_EMA
 
 #include <digitalWriteFast.h>  // library for high performance reads and writes by jrraines
-                               // see http://www.arduino.cc/cgi-bin/yabb2/YaBB.pl?num=1267553811/0
-                               // and http://code.google.com/p/digitalwritefast/
-                               // and http://www.hessmer.org/blog/2011/01/30/quadrature-encoder-too-fast-for-arduino/
+// see http://www.arduino.cc/cgi-bin/yabb2/YaBB.pl?num=1267553811/0
+// and http://code.google.com/p/digitalwritefast/
+// and http://www.hessmer.org/blog/2011/01/30/quadrature-encoder-too-fast-for-arduino/
 
 #include <Wire.h>
 #include <PID_v1.h>
@@ -48,7 +48,7 @@ volatile long long Ldistance, Rdistance;   // encoders - distance traveled, in t
 long long LdistancePrev = 0;   // last encoders values - distance traveled, in ticks
 long long RdistancePrev = 0;
 
-double pwm_R, pwm_L;    // pwm -255..255 accumulated here and ultimately sent to H-Bridge pins (will be constrained by set_motor()) 
+double pwm_R, pwm_L;    // pwm -255..255 accumulated here and ultimately sent to H-Bridge pins (will be constrained by set_motor())
 double dpwm_R, dpwm_L;  // correction output, calculated by PID, constrained -250..250 normally, will be added to the above
 
 double speedMeasured_R = 0;  // percent of max speed for this drive configuration.
@@ -118,7 +118,7 @@ void setup()
   InitSerial(); // ArticuBots uplink, uses Serial/USB.
 
   InitLeds();
-  
+
   int PID_SAMPLE_TIME = mydt * pidLoopFactor;  // milliseconds.
 
   // turn the PID on and set its parameters:
@@ -131,7 +131,7 @@ void setup()
   myPID_L.SetMode(AUTOMATIC);
 
   // enable pull-up resistor on RX3 pin to help bluetooth module with signal levels:
-  //pinMode(15, INPUT);  
+  //pinMode(15, INPUT);
   //digitalWrite(15, HIGH);
 
   // DEBUG pins:
@@ -141,16 +141,16 @@ void setup()
   InitializeI2c();
 
   MotorsInit();
-  
+
   EncodersInit();    // Initialize the encoders - attach interrupts
 
   setEmaPeriod(RightMotorChannel, EmaPeriod);
   setEmaPeriod(LeftMotorChannel, EmaPeriod);
-  
+
   pinMode(buzzerPin, OUTPUT);
   shortBuzz();
-  
-  timer = micros(); 
+
+  timer = micros();
   delay(20);
   loopCnt = 0;
 }
@@ -169,21 +169,21 @@ int printLoopCnt = 0;
 void loop() //Main Loop
 {
   // whole loop takes slightly over 3ms, with a bit less than 2ms left to idle
-  
+
   // Wait here, if not time yet - we use a time fixed loop
   if (lastLoopUsefulTime < STD_LOOP_TIME)
   {
-    while((micros() - timer) < STD_LOOP_TIME)
+    while ((micros() - timer) < STD_LOOP_TIME)
     {
       readCommCommand();  // reads desiredSpeed
     }
   }
-  
+
   //digitalWrite(10, HIGH);
   loopCnt++;
   timer_old = timer;
-  timer = micros(); 
-  
+  timer = micros();
+
   boolean isPidLoop = loopCnt % pidLoopFactor == 0;
 #ifdef TRACE
   boolean isPrintLoop = printLoopCnt++ >= printLoopFactor;
@@ -192,22 +192,22 @@ void loop() //Main Loop
   //digitalWrite(11, HIGH);
 
 #ifdef TRACE
-  if(isPrintLoop)
+  if (isPrintLoop)
   {
     printLoopCnt = 0;
-    /*    
-    Serial.print("Dist/cycle: ");
-    Serial.print(distR);
-    Serial.print("   Desired: ");
-    Serial.print(desiredSpeedR);
-    Serial.print("   Measured: ");
-    Serial.println(speedMeasured_R);
+    /*
+      Serial.print("Dist/cycle: ");
+      Serial.print(distR);
+      Serial.print("   Desired: ");
+      Serial.print(desiredSpeedR);
+      Serial.print("   Measured: ");
+      Serial.println(speedMeasured_R);
     */
     printAll();    // takes 34ms and completely stops the 5ms cycle
   }
 #endif
 
-  if(millis() - lastCommMs > AUTO_STOP_INTERVAL || millis() - lastMotorCommandMs > AUTO_STOP_INTERVAL)
+  if (millis() - lastCommMs > AUTO_STOP_INTERVAL || millis() - lastMotorCommandMs > AUTO_STOP_INTERVAL)
   {
     // failsafe - Comm signal or motor command is not detected for more than a second
     desiredSpeedR = desiredSpeedL = 0.0;
@@ -217,20 +217,20 @@ void loop() //Main Loop
   //desiredSpeedR = 10;
   //desiredSpeedL = 10;
 
-  if(isControlByJoystick())
+  if (isControlByJoystick())
   {
     // ignore Comm values and override by joystick on A0 and A1:
 
     computeJoystickSpeeds();
-    
+
     desiredSpeedL = joystickSpeedL;
     desiredSpeedR = joystickSpeedR;
 
-  //  myPID_L.SetMode(MANUAL);  // Disables PID, input goes straight to PWM
-  //  myPID_R.SetMode(MANUAL);
-  //} else {
-  //  myPID_L.SetMode(AUTOMATIC);
-  //  myPID_R.SetMode(AUTOMATIC);
+    //  myPID_L.SetMode(MANUAL);  // Disables PID, input goes straight to PWM
+    //  myPID_R.SetMode(MANUAL);
+    //} else {
+    //  myPID_L.SetMode(AUTOMATIC);
+    //  myPID_R.SetMode(AUTOMATIC);
   }
 
 #ifdef USE_EMA
@@ -246,19 +246,19 @@ void loop() //Main Loop
   myPID_R.Compute();
   myPID_L.Compute();
 
-  if(isPidLoop)  // we do speed PID and calculation on a slower scale, about 20Hz
-  {  
+  if (isPidLoop) // we do speed PID and calculation on a slower scale, about 20Hz
+  {
     // based on PWM increments, calculate speed:
     speed_calculate();
-    
+
     // Calculate the pwm, given the desired speed (pick up values computed by PIDs):
     pwm_calculate();
-  
+
     // if(abs(pwm_R) > 250 || abs(desiredSpeedR - speedMeasured_R) > 3) {
     //   Serial.print(speedMeasured_R);
     //   Serial.print("  ");
     //   Serial.println(pwm_R);
-    // }      
+    // }
 
     // test: At both motors set to +80 expect Ldistance and Rdistance to increase
     //pwm_R = 80.0;
@@ -269,14 +269,14 @@ void loop() //Main Loop
     //}
 
     set_motors();
-  
+
     //digitalWrite(10, LOW);
-    
+
     digitalWriteFast(redLedPin, millis() - lastCommMs > 1000 ? HIGH : LOW);
     //digitalWriteFast(whiteLedPin, millis() - lastMotorCommandMs > 1000 ? HIGH : LOW);
     //digitalWriteFast(blueLedPin, millis() - lastSonarMs > 1000 ? HIGH : LOW);
 
-    digitalWriteFast(greenLedPin,!digitalReadFast(greenLedPin));  // blinking at 10 Hz
+    digitalWriteFast(greenLedPin, !digitalReadFast(greenLedPin)); // blinking at 10 Hz
     //digitalWriteFast(ledPin,!digitalReadFast(ledPin));
   }
 
@@ -287,22 +287,22 @@ void loop() //Main Loop
   lastLoopUsefulTime = micros() - timer;
 
   /*
-  if (lastLoopUsefulTime > STD_LOOP_TIME + STD_LOOP_TIME)
-  {
+    if (lastLoopUsefulTime > STD_LOOP_TIME + STD_LOOP_TIME)
+    {
     DbgRed(true);
-  }
-  
-  if(angle_prev != angle)
-  {
+    }
+
+    if(angle_prev != angle)
+    {
     angle_prev = angle;
     DbgGreen(true);
-  }
-  else
-  {
+    }
+    else
+    {
     DbgGreen(false);
-  }
+    }
   */
-  
+
   // let operating environment work (maybe taking time) and reenter the loop()
   //digitalWrite(10, LOW);
 }

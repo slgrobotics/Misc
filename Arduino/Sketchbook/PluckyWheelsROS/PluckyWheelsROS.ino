@@ -2,9 +2,9 @@
 //#define USE_EMA
 
 #include <digitalWriteFast.h>  // library for high performance reads and writes by jrraines
-                               // see http://www.arduino.cc/cgi-bin/yabb2/YaBB.pl?num=1267553811/0
-                               // and http://code.google.com/p/digitalwritefast/
-                               // and http://www.hessmer.org/blog/2011/01/30/quadrature-encoder-too-fast-for-arduino/
+// see http://www.arduino.cc/cgi-bin/yabb2/YaBB.pl?num=1267553811/0
+// and http://code.google.com/p/digitalwritefast/
+// and http://www.hessmer.org/blog/2011/01/30/quadrature-encoder-too-fast-for-arduino/
 
 #include <Wire.h>
 #include <PID_v1.h>
@@ -41,7 +41,7 @@ volatile long long Ldistance, Rdistance;   // encoders - distance traveled, in t
 long long LdistancePrev = 0;   // last encoders values - distance traveled, in ticks
 long long RdistancePrev = 0;
 
-double pwm_R, pwm_L;    // pwm -255..255 accumulated here and ultimately sent to H-Bridge pins (will be constrained by set_motor()) 
+double pwm_R, pwm_L;    // pwm -255..255 accumulated here and ultimately sent to H-Bridge pins (will be constrained by set_motor())
 double dpwm_R, dpwm_L;  // correction output, calculated by PID, constrained -250..250 normally, will be added to the above
 
 double speedMeasured_R = 0;  // percent of max speed for this drive configuration.
@@ -113,7 +113,7 @@ void setup()
   InitSerial(); // ArticuBots uplink, uses Serial/USB.
 
   InitLeds();
-  
+
   int PID_SAMPLE_TIME = mydt * pidLoopFactor;  // milliseconds.
 
   // turn the PID on and set its parameters:
@@ -135,7 +135,7 @@ void setup()
 
   setEmaPeriod(RightMotorChannel, EmaPeriod);
   setEmaPeriod(LeftMotorChannel, EmaPeriod);
-  
+
   timer = micros();
   delay(20);
   loopCnt = 0;
@@ -154,43 +154,43 @@ int printLoopCnt = 0;
 
 void loop() //Main Loop
 {
-/* 
-  // test - direct motor PWM control:
+  /*
+    // test - direct motor PWM control:
 
-  digitalWriteFast(RDIR, testDir ? LOW : HIGH);
-  analogWrite(RPWM, 200);
+    digitalWriteFast(RDIR, testDir ? LOW : HIGH);
+    analogWrite(RPWM, 200);
 
-  digitalWriteFast(LDIR, testDir ? HIGH : LOW);
-  analogWrite(LPWM, 200);
+    digitalWriteFast(LDIR, testDir ? HIGH : LOW);
+    analogWrite(LPWM, 200);
 
-  // test - motor PWM control via set_motors():
-//  pwm_R = 255;
-//  pwm_L = 255;
-//  set_motors();
+    // test - motor PWM control via set_motors():
+    //  pwm_R = 255;
+    //  pwm_L = 255;
+    //  set_motors();
 
-  printAll();
-  delay(3000);
-  testDir = !testDir;
-  return;
-*/
-  
+    printAll();
+    delay(3000);
+    testDir = !testDir;
+    return;
+  */
+
   //delay(1); // 1 ms
 
   // whole loop takes slightly over 3ms, with a bit less than 2ms left to idle
-  
+
   // Wait here, if not time yet - we use a time fixed loop
   if (lastLoopUsefulTime < STD_LOOP_TIME)
   {
-    while((micros() - timer) < STD_LOOP_TIME)
+    while ((micros() - timer) < STD_LOOP_TIME)
     {
       readCommCommand();  // reads desiredSpeed
     }
   }
-  
+
   loopCnt++;
   timer_old = timer;
-  timer = micros(); 
-  
+  timer = micros();
+
   boolean isPidLoop = loopCnt % pidLoopFactor == 0;
 #ifdef TRACE
   boolean isPrintLoop = printLoopCnt++ >= printLoopFactor;
@@ -199,22 +199,22 @@ void loop() //Main Loop
   //digitalWrite(11, HIGH);
 
 #ifdef TRACE
-  if(isPrintLoop)
+  if (isPrintLoop)
   {
     printLoopCnt = 0;
-    /*    
-    Serial.print("Dist/cycle: ");
-    Serial.print(distR);
-    Serial.print("   Desired: ");
-    Serial.print(desiredSpeedR);
-    Serial.print("   Measured: ");
-    Serial.println(speedMeasured_R);
+    /*
+      Serial.print("Dist/cycle: ");
+      Serial.print(distR);
+      Serial.print("   Desired: ");
+      Serial.print(desiredSpeedR);
+      Serial.print("   Measured: ");
+      Serial.println(speedMeasured_R);
     */
     printAll();    // takes 34ms and completely stops the 5ms cycle
   }
 #endif
-  
-  if(millis() - lastCommMs > AUTO_STOP_INTERVAL || millis() - lastMotorCommandMs > AUTO_STOP_INTERVAL)
+
+  if (millis() - lastCommMs > AUTO_STOP_INTERVAL || millis() - lastMotorCommandMs > AUTO_STOP_INTERVAL)
   {
     // failsafe - Comm signal or motor command is not detected for more than a second
     desiredSpeedR = desiredSpeedL = 0.0;
@@ -223,21 +223,21 @@ void loop() //Main Loop
   // test - controller should hold this speed:
   //desiredSpeedR = 20;
   //desiredSpeedL = 20;
-  
-  if(isControlByJoystick())
+
+  if (isControlByJoystick())
   {
     // ignore Comm values and override by joystick on A0 and A1:
 
     computeJoystickSpeeds();
-  
+
     desiredSpeedL = joystickSpeedL;
     desiredSpeedR = joystickSpeedR;
 
-  //  myPID_L.SetMode(MANUAL);  // Disables PID, input goes straight to PWM
-  //  myPID_R.SetMode(MANUAL);
-  //} else {
-  //  myPID_L.SetMode(AUTOMATIC);
-  //  myPID_R.SetMode(AUTOMATIC);
+    //  myPID_L.SetMode(MANUAL);  // Disables PID, input goes straight to PWM
+    //  myPID_R.SetMode(MANUAL);
+    //} else {
+    //  myPID_L.SetMode(AUTOMATIC);
+    //  myPID_R.SetMode(AUTOMATIC);
   }
 
 #ifdef USE_EMA
@@ -253,11 +253,11 @@ void loop() //Main Loop
   myPID_R.Compute();
   myPID_L.Compute();
 
-  if(isPidLoop)  // we do speed PID calculation on a slower scale, about 20Hz
+  if (isPidLoop) // we do speed PID calculation on a slower scale, about 20Hz
   {
     // based on PWM increments, calculate speed:
     speed_calculate();
-    
+
     // Calculate the pwm, given the desired speed (pick up values computed by PIDs):
     pwm_calculate();
 
@@ -265,7 +265,7 @@ void loop() //Main Loop
     //   Serial.print(speedMeasured_R);
     //   Serial.print("  ");
     //   Serial.println(pwm_R);
-    // }      
+    // }
 
     // test: At both motors set to +80 expect Ldistance and Rdistance to increase
     //pwm_R = 80.0;
@@ -283,7 +283,7 @@ void loop() //Main Loop
     digitalWriteFast(whiteLedPin, millis() - lastMotorCommandMs > 1000 ? HIGH : LOW);
     digitalWriteFast(blueLedPin, millis() - lastSonarMs > 1000 ? HIGH : LOW);
 
-    digitalWriteFast(greenLedPin,!digitalReadFast(greenLedPin));  // blinking at 10 Hz
+    digitalWriteFast(greenLedPin, !digitalReadFast(greenLedPin)); // blinking at 10 Hz
     //digitalWriteFast(ledPin,!digitalReadFast(ledPin));
   }
 

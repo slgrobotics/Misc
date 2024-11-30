@@ -4,9 +4,9 @@
 
 // #include "freeram.h" - originally from MotionPlug library
 int freeRam () {
-  extern int __heap_start, *__brkval; 
-  int v; 
-  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
 //#define ARTICUBOTS_USE_SERVOS
@@ -19,7 +19,7 @@ int freeRam () {
 void InitSerial() {
 
   COMM_SERIAL.begin(BAUDRATE_ARTICUBOTS);   // start serial for USB to Raspberry Pi
-  //COMM_SERIAL.setTimeout(1);  
+  //COMM_SERIAL.setTimeout(1);
 }
 
 /* Define single-letter commands that will be sent by the PC over the
@@ -87,8 +87,8 @@ void readCommCommand() {
     cmd_in.trim();
     //Serial.println(cmd_in);
 
-    if(cmd_in.length() == 0) {
-      respond_OK('*');      
+    if (cmd_in.length() == 0) {
+      respond_OK('*');
       return;    // ignore empty strings
     }
 
@@ -100,13 +100,13 @@ void readCommCommand() {
         strs[StringCount++] = cmd_in;
         break;
       } else {
-        if(StringCount == 0 && index != 1) {  // expect only single character commands
+        if (StringCount == 0 && index != 1) { // expect only single character commands
           //COMM_SERIAL.println("Error: not a command");
           respond_ERROR(cmd_in);
           return;
         }
         strs[StringCount++] = cmd_in.substring(0, index);
-        cmd_in = cmd_in.substring(index+1);
+        cmd_in = cmd_in.substring(index + 1);
       }
     }
 
@@ -117,7 +117,7 @@ void readCommCommand() {
 
     //Serial.println(StringCount);
 
-    switch(StringCount) {
+    switch (StringCount) {
       case 1:   // just the command, like "e"
         runCommand();
         resetCommand();
@@ -143,16 +143,16 @@ void readCommCommand() {
         respond_ERROR(cmd_in);
         return;
     }
-    
-    /*    
-    // Show the resulting substrings
-    for (int i = 0; i < StringCount; i++)
-    {
+
+    /*
+      // Show the resulting substrings
+      for (int i = 0; i < StringCount; i++)
+      {
       Serial.print(i);
       Serial.print(": \"");
       Serial.print(strs[i]);
       Serial.println("\"");
-    }
+      }
     */
   }
 }
@@ -173,135 +173,135 @@ void runCommand() {
 
   lastCommMs = millis();
 
-  switch(cmd) {
-  case GET_BAUDRATE:
-    sprintf(&out_buf[2], "%ld\r", BAUDRATE_ARTICUBOTS);
-    respond();
-    break;
-  case ANALOG_READ:
-    sprintf(&out_buf[2], "%d\r", analogRead(arg1));
-    respond();
-    break;
-  case DIGITAL_READ:
-    sprintf(&out_buf[2], "%d\r", digitalReadFast(arg1));
-    respond();
-    break;
-  case ANALOG_WRITE:
-    analogWrite(arg1, arg2);
-    respond_OK(cmd); 
-    break;
-  case DIGITAL_WRITE:
-    if (arg2 == 0) digitalWrite(arg1, LOW);
-    else if (arg2 == 1) digitalWrite(arg1, HIGH);
-    respond_OK(cmd); 
-    break;
-  case PIN_MODE:
-    if (arg2 == 0) pinMode(arg1, INPUT);
-    else if (arg2 == 1) pinMode(arg1, OUTPUT);
-    respond_OK(cmd);
-    break;
-  case SONAR_PING:
-    receiveI2cSonarPacket();
-    // reported 255 if out of range, otherwise range in centimeters:
-    sprintf(&out_buf[2], "%d %d %d %d\r", rangeFRcm, rangeFLcm, rangeBRcm, rangeBLcm);
-    respond();
-    break;
-#ifdef ARTICUBOTS_USE_SERVOS
-  case SERVO_WRITE:
-    servos[arg1].setTargetPosition(arg2);
-    respond_OK(cmd);
-    break;
-  case SERVO_READ:
-    sprintf(&out_buf[2], "%d\r", servos[arg1].getServo().read());
-    respond();
-    break;
-#endif  // ARTICUBOTS_USE_SERVOS
-    
-#ifdef ARTICUBOTS_USE_BASE
-  case READ_ENCODERS:
-    sprintf(&out_buf[2], "%ld %ld\r", readEncoder(LEFT), readEncoder(RIGHT));
-    respond();
-    break;
-   case RESET_ENCODERS:
-    EncodersReset();
-    resetPID();
-    respond_OK(cmd);
-    break;
-  case READ_HEALTH:
-    {
-      long bat = analogRead(batteryInPin); // "800" here relates to battery voltage 11.72V = 3.90V per cell
-      //bat = bat * 39 / 8; // millivolts, returns "4031" for 4.031V per cell
-      bat = bat * 117 / 8; // millivolts, returns "12000" for 12.0V
-      int current_ma = -1; // TODO: need to measure it
-      sprintf(&out_buf[2], "%ld %d %d\r", bat, current_ma, freeRam());
+  switch (cmd) {
+    case GET_BAUDRATE:
+      sprintf(&out_buf[2], "%ld\r", BAUDRATE_ARTICUBOTS);
       respond();
-    }
-    break;
-  case MOTOR_SPEEDS:
-    /* Reset the auto stop timer */
-    lastMotorCommandMs = millis();
-    //Serial.print(arg1);
-    //Serial.print(" --- ");
-    //Serial.println(arg2);
-    if (arg1 == 0 && arg2 == 0) {
-      setMotorSpeeds(0, 0);
+      break;
+    case ANALOG_READ:
+      sprintf(&out_buf[2], "%d\r", analogRead(arg1));
+      respond();
+      break;
+    case DIGITAL_READ:
+      sprintf(&out_buf[2], "%d\r", digitalReadFast(arg1));
+      respond();
+      break;
+    case ANALOG_WRITE:
+      analogWrite(arg1, arg2);
+      respond_OK(cmd);
+      break;
+    case DIGITAL_WRITE:
+      if (arg2 == 0) digitalWrite(arg1, LOW);
+      else if (arg2 == 1) digitalWrite(arg1, HIGH);
+      respond_OK(cmd);
+      break;
+    case PIN_MODE:
+      if (arg2 == 0) pinMode(arg1, INPUT);
+      else if (arg2 == 1) pinMode(arg1, OUTPUT);
+      respond_OK(cmd);
+      break;
+    case SONAR_PING:
+      receiveI2cSonarPacket();
+      // reported 255 if out of range, otherwise range in centimeters:
+      sprintf(&out_buf[2], "%d %d %d %d\r", rangeFRcm, rangeFLcm, rangeBRcm, rangeBLcm);
+      respond();
+      break;
+#ifdef ARTICUBOTS_USE_SERVOS
+    case SERVO_WRITE:
+      servos[arg1].setTargetPosition(arg2);
+      respond_OK(cmd);
+      break;
+    case SERVO_READ:
+      sprintf(&out_buf[2], "%d\r", servos[arg1].getServo().read());
+      respond();
+      break;
+#endif  // ARTICUBOTS_USE_SERVOS
+
+#ifdef ARTICUBOTS_USE_BASE
+    case READ_ENCODERS:
+      sprintf(&out_buf[2], "%ld %ld\r", readEncoder(LEFT), readEncoder(RIGHT));
+      respond();
+      break;
+    case RESET_ENCODERS:
+      EncodersReset();
       resetPID();
-      moving = 0;
-    }
-    else moving = 1;
-
-    // desiredSpeed* is in the range -100...100 - it has a meaning of "percent of max possible speed".
-    // it must be scaled if ticks/sec or rad/sec or m/sec is desired.
-    // For Plucky full wheel rotation takes 3.8 seconds. So, with R_wheel = 0.192m max speed is:
-    //   - 0.317 m/sec
-    //   - 1.65 rad/sec
-    //   - 660 encoder ticks/sec
-
-    //leftPID.TargetTicksPerFrame = arg1;
-    desiredSpeedL = arg1;
-    //rightPID.TargetTicksPerFrame = arg2;
-    desiredSpeedR = arg2;
-    respond_OK(cmd); 
-    break;
-  case MOTOR_RAW_PWM:
-    /* Reset the auto stop timer */
-    lastMotorCommandMs = millis();
-    resetPID();
-    moving = 0; // Sneaky way to temporarily disable the PID
-    setMotorSpeeds(arg1, arg2);
-    respond_OK(cmd); 
-    break;
-  case UPDATE_PID:
-    {
-      char *p = pid_args_str;
-      char *str;
-      int i = 0;
-      int pid_args[4];
-
-      while ((str = strtok_r(p, ":", &p)) != NULL) {
-        pid_args[i] = atoi(str);
-        i++;
+      respond_OK(cmd);
+      break;
+    case READ_HEALTH:
+      {
+        long bat = analogRead(batteryInPin); // "800" here relates to battery voltage 11.72V = 3.90V per cell
+        //bat = bat * 39 / 8; // millivolts, returns "4031" for 4.031V per cell
+        bat = bat * 117 / 8; // millivolts, returns "12000" for 12.0V
+        int current_ma = -1; // TODO: need to measure it
+        sprintf(&out_buf[2], "%ld %d %d\r", bat, current_ma, freeRam());
+        respond();
       }
+      break;
+    case MOTOR_SPEEDS:
+      /* Reset the auto stop timer */
+      lastMotorCommandMs = millis();
+      //Serial.print(arg1);
+      //Serial.print(" --- ");
+      //Serial.println(arg2);
+      if (arg1 == 0 && arg2 == 0) {
+        setMotorSpeeds(0, 0);
+        resetPID();
+        moving = 0;
+      }
+      else moving = 1;
 
-      /*
-      Serial.print(pid_args[0]); Serial.print("|");
-      Serial.print(pid_args[1]); Serial.print("|");
-      Serial.print(pid_args[2]); Serial.print("|");
-      Serial.println(pid_args[3]);
-      /*
-      Kp = pid_args[0];
-      Kd = pid_args[1];
-      Ki = pid_args[2];
-      Ko = pid_args[3];
-      */
-    }
-    respond_OK(cmd);
-    break;
+      // desiredSpeed* is in the range -100...100 - it has a meaning of "percent of max possible speed".
+      // it must be scaled if ticks/sec or rad/sec or m/sec is desired.
+      // For Plucky full wheel rotation takes 3.8 seconds. So, with R_wheel = 0.192m max speed is:
+      //   - 0.317 m/sec
+      //   - 1.65 rad/sec
+      //   - 660 encoder ticks/sec
+
+      //leftPID.TargetTicksPerFrame = arg1;
+      desiredSpeedL = arg1;
+      //rightPID.TargetTicksPerFrame = arg2;
+      desiredSpeedR = arg2;
+      respond_OK(cmd);
+      break;
+    case MOTOR_RAW_PWM:
+      /* Reset the auto stop timer */
+      lastMotorCommandMs = millis();
+      resetPID();
+      moving = 0; // Sneaky way to temporarily disable the PID
+      setMotorSpeeds(arg1, arg2);
+      respond_OK(cmd);
+      break;
+    case UPDATE_PID:
+      {
+        char *p = pid_args_str;
+        char *str;
+        int i = 0;
+        int pid_args[4];
+
+        while ((str = strtok_r(p, ":", &p)) != NULL) {
+          pid_args[i] = atoi(str);
+          i++;
+        }
+
+        /*
+          Serial.print(pid_args[0]); Serial.print("|");
+          Serial.print(pid_args[1]); Serial.print("|");
+          Serial.print(pid_args[2]); Serial.print("|");
+          Serial.println(pid_args[3]);
+          /*
+          Kp = pid_args[0];
+          Kd = pid_args[1];
+          Ki = pid_args[2];
+          Ko = pid_args[3];
+        */
+      }
+      respond_OK(cmd);
+      break;
 #endif  // ARTICUBOTS_USE_BASE
 
-  default:
-    respond_ERROR(cmd_in);
-    break;
+    default:
+      respond_ERROR(cmd_in);
+      break;
   }
 }
 

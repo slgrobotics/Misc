@@ -15,13 +15,13 @@ void InitLeds()
 
   digitalWrite(ledPin, HIGH);
 
-/*
-  digitalWrite(redLedPin, HIGH);
-  digitalWrite(yellowLedPin, HIGH);
-  digitalWrite(blueLedPin, HIGH);
-  digitalWrite(greenLedPin, HIGH);
-  digitalWrite(whiteLedPin, HIGH);
-*/
+  /*
+    digitalWrite(redLedPin, HIGH);
+    digitalWrite(yellowLedPin, HIGH);
+    digitalWrite(blueLedPin, HIGH);
+    digitalWrite(greenLedPin, HIGH);
+    digitalWrite(whiteLedPin, HIGH);
+  */
 }
 
 void blinkLED(int nTimes, int halfPeriodMs)
@@ -59,27 +59,27 @@ void printAll()
     Serial.print(setpointSpeedR);
     Serial.print("       Left: ");
     Serial.println(setpointSpeedL);
-  
+
     Serial.print("Encoders:  Right Rdistance: ");
     Serial.print(Rdur);
     Serial.print("       Left Ldistance: ");
     Serial.println(Ldur);
-  
+
     Serial.print("Measured speed %:   Right: ");
     Serial.print(speedMeasured_R);
     Serial.print("       Left: ");
     Serial.println(speedMeasured_L);
-  
+
     Serial.print("PID:   Right dpwm_R: ");
     Serial.print(dpwm_R);
     Serial.print("       Left dpwm_L: ");
     Serial.println(dpwm_L);
-  
+
     Serial.print("Motors:   Right pwm_R: ");
     Serial.print(pwm_R);
     Serial.print("       Left pwm_L: ");
     Serial.println(pwm_L);
-    
+
     Serial.print("Joystick:   in control: ");
     Serial.print(isControlByJoystick());
     Serial.print("  pressed: ");
@@ -100,21 +100,21 @@ void printAll()
 // limits degrees "a" to 0...360
 double to360(double a)
 {
-  if(a > 0.0)
+  if (a > 0.0)
   {
     while (a >= 360.0)
     {
       a -= 360.0;
     }
   }
-  else if(a < 0.0)
+  else if (a < 0.0)
   {
     while (a < 0.0)
     {
       a += 360.0;
     }
   }
-  
+
   return a;
 }
 #endif

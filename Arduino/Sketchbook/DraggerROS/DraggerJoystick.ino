@@ -22,22 +22,22 @@ boolean isJoystickPressed()
 
 double joystickX()
 {
-  double jx = map((double)analogRead(AD_Xpin) + TRIM_X,0.0,1023.0,-100.0,100.0);
-  
-  if(abs(jx) < DEADZONE_JS) // deadzone
+  double jx = map((double)analogRead(AD_Xpin) + TRIM_X, 0.0, 1023.0, -100.0, 100.0);
+
+  if (abs(jx) < DEADZONE_JS) // deadzone
     jx = 0.0;
-    
-   return jx;
+
+  return jx;
 }
 
 double joystickY()
 {
-  double jy = map((double)analogRead(AD_Ypin) + TRIM_Y,27.0,1023.0,-100.0,95.0) + 5.0;
-  
-  if(abs(jy) < DEADZONE_JS) // deadzone
+  double jy = map((double)analogRead(AD_Ypin) + TRIM_Y, 27.0, 1023.0, -100.0, 95.0) + 5.0;
+
+  if (abs(jy) < DEADZONE_JS) // deadzone
     jy = 0.0;
-    
-   return jy;
+
+  return jy;
 }
 
 // for percentage speed output, -100...100:
@@ -53,7 +53,7 @@ void computeJoystickSpeeds()
 
   double x = joystickX() / 100.0;
   double y = joystickY() / 100.0;
-  
+
   // we need absolute values later:
   double ax = abs(x);
   double ay = abs(y);
@@ -62,8 +62,8 @@ void computeJoystickSpeeds()
   boolean tz = (y < 0 && ay < ax) ? true : false;
 
   // we scale output in diagonal directions:
-  double alpha = (ax == 0 || ay == 0) ? 0 : atan(ay < ax ? ay/ax : ax/ay);
-  double factor = tz ? cos(alpha/2.0) : cos(alpha);
+  double alpha = (ax == 0 || ay == 0) ? 0 : atan(ay < ax ? ay / ax : ax / ay);
+  double factor = tz ? cos(alpha / 2.0) : cos(alpha);
 
   // Mix for arcade drive
   if (y >= 0.0)
@@ -72,7 +72,7 @@ void computeJoystickSpeeds()
     leftMix = y + x;
     rightMix = y - x;
   }
-  else if(!tz)
+  else if (!tz)
   {
     // backwards driving zone, inverted output. Lower sector, 135...215 degrees:
     leftMix = y - x;

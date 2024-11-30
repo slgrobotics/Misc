@@ -7,7 +7,7 @@ void InitializeI2c()
 void receiveI2cSonarPacket()
 {
   // see C:\Projects\Arduino\Sketchbook\ParkingSensorI2C
-  
+
   int checksum = 0;
 
   Wire.requestFrom(SONAR_I2C_ADDRESS, 6);    // request 6 bytes from slave device
@@ -48,23 +48,23 @@ void receiveI2cSonarPacket()
 
   if (i == 7 && checksum + rangeFRcm + rangeFLcm + rangeBRcm + rangeBLcm == 0)
   {
-//    Serial.print(rangeFRcm);
-//    Serial.print(" ");
-//    Serial.print(rangeFLcm);
-//    Serial.print(" ");
-//    Serial.print(rangeBRcm);
-//    Serial.print(" ");
-//    Serial.print(rangeBLcm);
-//    Serial.print(" ");
-//    Serial.println(checksum);
+    //    Serial.print(rangeFRcm);
+    //    Serial.print(" ");
+    //    Serial.print(rangeFLcm);
+    //    Serial.print(" ");
+    //    Serial.print(rangeBRcm);
+    //    Serial.print(" ");
+    //    Serial.print(rangeBLcm);
+    //    Serial.print(" ");
+    //    Serial.println(checksum);
     lastSonarMs = millis();
   }
   else
   {
-//    Serial.println("Error: bad transmission from Slave");
-        rangeFRcm = -1;
-        rangeFLcm = -1;
-        rangeBRcm = -1;
-        rangeBLcm = -1;
+    //    Serial.println("Error: bad transmission from Slave");
+    rangeFRcm = -1;
+    rangeFLcm = -1;
+    rangeBRcm = -1;
+    rangeBLcm = -1;
   }
 }
