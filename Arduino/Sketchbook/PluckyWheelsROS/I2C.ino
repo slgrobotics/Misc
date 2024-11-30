@@ -4,22 +4,6 @@ void InitializeI2c()
   //Fastwire::setup(400, 0);
 }
 
-double lastCompassYaw = 0.0;
-
-void receiveI2cCompassPacket()
-{
-  // see C:\Projects\Arduino\Sketchbook\MotionPlug
-
-  compassYaw = mympu.ypr[0];  // -180.0,180.0
-
-  if(lastCompassYaw != compassYaw)
-  {
-    lastCompassYaw = compassYaw;
-    lastImuMs = millis();
-    //Serial.println(lastCompassYaw);
-  }
-}
-
 void receiveI2cSonarPacket()
 {
   // see C:\Projects\Arduino\Sketchbook\ParkingSensorI2C
@@ -84,4 +68,3 @@ void receiveI2cSonarPacket()
         rangeBLcm = -1;
   }
 }
-

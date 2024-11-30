@@ -57,7 +57,7 @@ double speedMeasured_L = 0;
 long distR; // ticks per 100ms cycle, as measured
 long distL;
 
-// desired speed can be set joystick:
+// desired speed can be set by joystick:
 // comes in the range -100...100 - it has a meaning of "percent of max speed":
 double joystickSpeedR = 0.0;
 double joystickSpeedL = 0.0;
@@ -110,6 +110,7 @@ unsigned long AUTO_STOP_INTERVAL = 2000;
 // milliseconds from last events:
 unsigned long lastMotorCommandMs = 0;
 unsigned long lastCommMs = 0;
+unsigned long lastSonarMs = 0;
 
 //-------------------------------------- End of variable definitions -----------------------------------------//
 
@@ -121,9 +122,7 @@ unsigned int lastLoopCnt = 0;
 
 void setup()
 {
-  //Serial.begin(115200);   // start serial for USB
-
-  InitSerial(); // ArticuBots uplink, uses Serial/USB. Could use Serial3 for BLE-LINK on pins 14,15 ?
+  InitSerial(); // ArticuBots uplink, uses Serial/USB.
 
   InitLeds();
   
@@ -148,7 +147,7 @@ void setup()
 
   MotorsInit();
   
-  EncodersInit();	// Initialize the encoders - attach interrupts
+  EncodersInit();    // Initialize the encoders - attach interrupts
 
   odometry = new DifferentialDriveOdometry();
   odometry->Init(wheelBaseMeters, wheelRadiusMeters, encoderTicksPerRevolution);
@@ -228,7 +227,7 @@ void loop() //Main Loop
 
   if(isControlByJoystick())
   {
-    // ignore R/C values and override by joystick on A0 and A1:
+    // ignore Comm values and override by joystick on A0 and A1:
 
     computeJoystickSpeeds();
     
@@ -303,7 +302,6 @@ void loop() //Main Loop
     //digitalWrite(10, LOW);
     
     digitalWriteFast(redLedPin, millis() - lastCommMs > 1000 ? HIGH : LOW);
-    //digitalWriteFast(yellowLedPin, millis() - lastImuMs > 1000 ? HIGH : LOW);
     //digitalWriteFast(whiteLedPin, millis() - lastMotorCommandMs > 1000 ? HIGH : LOW);
     //digitalWriteFast(blueLedPin, millis() - lastSonarMs > 1000 ? HIGH : LOW);
 

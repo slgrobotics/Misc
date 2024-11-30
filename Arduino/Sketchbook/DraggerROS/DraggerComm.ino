@@ -12,7 +12,6 @@ int freeRam () {
 //#define ARTICUBOTS_USE_SERVOS
 #define ARTICUBOTS_USE_BASE
 
-// could use Serial3 for BLE-LINK on pins 14,15 ?
 #define COMM_SERIAL Serial
 #define BAUDRATE_ARTICUBOTS 115200
 #define DO_RESPOND_OK
@@ -30,7 +29,6 @@ void receiveI2cCompassPacket() {
 // ==================================
 
 void InitSerial() {
-  //Serial1.begin(57600);  // connect GPS Leonardo shield uplink (pins 3 and 8) to pins 19 (RX) and 18 (TX)
 
   COMM_SERIAL.begin(BAUDRATE_ARTICUBOTS);  // start serial for USB to Raspberry Pi
   //COMM_SERIAL.setTimeout(1);
@@ -242,22 +240,6 @@ void runCommand() {
       resetPID();
       respond_OK(cmd);
       break;
-    case READ_GPS:
-      receiveI2cCompassPacket();
-      // Serial.print("longlat: ");
-      // Serial.print(longlat);
-      // Serial.print("   lastCompassYaw: ");
-      // Serial.println(lastCompassYaw);
-      {
-        int gpsFix = 0;
-        int gpsSat = 0;
-        int gpsHdop = 0;
-        String longlat = "";
-        unsigned long lastGpsDataMs = 0;
-        sprintf(&out_buf[2], "%d %d %d %ld %s %d\r", gpsFix, gpsSat, gpsHdop, (long)(millis() - lastGpsDataMs), longlat.c_str(), (int)round(lastCompassYaw));
-      }
-      respond();
-      break;
     case READ_HEALTH:
       {
         long bat = analogRead(batteryInPin); // "900" here relates to battery voltage 13.713V
@@ -278,14 +260,18 @@ void runCommand() {
         setMotorSpeeds(0, 0);
         resetPID();
         moving = 0;
-      } else moving = 1;
+    }
+    else moving = 1;
 
       // desiredSpeed* is in the range -100...100 - it has a meaning of "percent of max possible speed".
       // For Dragger full wheel rotation takes 2.2 seconds. So, with R_wheel=0.192m dist=1.206m max speed is:
       //   - 0.548 m/sec (1.23 mph, 1.97 km/h)
       //   - 2.86 rad/sec
       //   - 6241 encoder ticks/sec
+
+      //leftPID.TargetTicksPerFrame = arg1;
       desiredSpeedL = arg1;
+      //rightPID.TargetTicksPerFrame = arg2;
       desiredSpeedR = arg2;
       respond_OK(cmd);
       break;
@@ -351,3 +337,4 @@ void setMotorSpeeds(int leftSpeed, int rightSpeed) {
   setMotorSpeed(LEFT, leftSpeed);
   setMotorSpeed(RIGHT, rightSpeed);
 }
+

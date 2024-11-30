@@ -1,14 +1,23 @@
 //#define TRACE
 //#define USE_EMA
 
-#include <digitalWriteFast.h>
-#include "freeram.h"
-#include <Wire.h>
-//#include "I2Cdev.h"
+#include <digitalWriteFast.h>  // library for high performance reads and writes by jrraines
+                               // see http://www.arduino.cc/cgi-bin/yabb2/YaBB.pl?num=1267553811/0
+                               // and http://code.google.com/p/digitalwritefast/
+                               // and http://www.hessmer.org/blog/2011/01/30/quadrature-encoder-too-fast-for-arduino/
 
+#include <Wire.h>
 #include <Odometry.h>
 #include <PID_v1.h>
-#include "mpu.h"        // MotionPlug
+//#include <PID_v1_bc.h>
+
+//
+// As of 2024-11-30 this code is deployed on Plucky robot and works with its joystick and ROS
+//
+// See https://github.com/slgrobotics/robots_bringup/tree/main/Docs/Plucky
+//
+// Sergei Grichine - slg@quakemap.com
+//
 
 const int ledPin = 13;    // Arduino UNO Yellow LED
 
@@ -19,7 +28,7 @@ const int blueLedPin = 50;
 const int greenLedPin = 53;
 const int whiteLedPin = 52;
 
-const int batteryInPin = A3;  // Analog input pin that the battery 1/3 divider is attached to. "800" = 3.90V per cell.
+const int batteryInPin = A3;  // Analog input pin that the battery 1/3 divider is attached to. "800" = 3.90V per cell (11.72V).
 
 #define SONAR_I2C_ADDRESS 9   // parking sonar sensor, driven by Arduino Pro Mini (ParkingSensorI2C.ino)
 
@@ -33,7 +42,7 @@ volatile long long Ldistance, Rdistance;   // encoders - distance traveled, in t
 long long LdistancePrev = 0;   // last encoders values - distance traveled, in ticks
 long long RdistancePrev = 0;
 
-int pwm_R, pwm_L;       // pwm -255..255 sent to H-Bridge pins (will be constrained by set_motor()) 
+double pwm_R, pwm_L;    // pwm -255..255 accumulated here and ultimately sent to H-Bridge pins (will be constrained by set_motor()) 
 double dpwm_R, dpwm_L;  // correction output, calculated by PID, constrained -250..250 normally, will be added to the above
 
 double speedMeasured_R = 0;  // percent of max speed for this drive configuration.
@@ -43,6 +52,7 @@ long distR; // ticks per 100ms cycle, as measured
 long distL;
 
 // desired speed can be set by joystick:
+// comes in the range -100...100 - it has a meaning of "percent of max speed":
 double joystickSpeedR = 0.0;
 double joystickSpeedL = 0.0;
 
@@ -81,22 +91,11 @@ DifferentialDriveOdometry *odometry;
 PID myPID_R(&speedMeasured_R, &dpwm_R, &setpointSpeedR, 1.0, 0, 0.05, DIRECT);    // in, out, setpoint, double Kp, Ki, Kd, DIRECT or REVERSE
 PID myPID_L(&speedMeasured_L, &dpwm_L, &setpointSpeedL, 1.0, 0, 0.05, DIRECT);
 
-// received from parking sonar sensor Slave, readings in centimeters (receiveI2cSonarPacket() must be called):
+// received from parking sonar sensor I2C Slave, readings in centimeters (receiveI2cSonarPacket() must be called):
 volatile int rangeFRcm;
 volatile int rangeFLcm;
 volatile int rangeBRcm;
 volatile int rangeBLcm;
-
-// delivered by MotionPlug via I2C (receiveI2cCompassPacket() must be called):
-double compassYaw = 0.0;
-
-int gpsFix = 0;
-int gpsSat = 0;
-int gpsHdop = 0;
-String longlat = "";
-unsigned long lastGpsDataMs = 0; 
-
-char gpsChars[100];
 
 bool testDir = false;
 
@@ -105,12 +104,11 @@ bool testDir = false;
 unsigned long AUTO_STOP_INTERVAL = 2000;
 
 // milliseconds from last events:
-unsigned long lastImuMs = 0;
 unsigned long lastMotorCommandMs = 0;
 unsigned long lastCommMs = 0;
 unsigned long lastSonarMs = 0;
 
-// ------------------------------------------------------------------------------------------------------ //
+//-------------------------------------- End of variable definitions -----------------------------------------//
 
 unsigned long timer = 0;     // general purpose timer, microseconds
 unsigned long timer_old;
@@ -120,7 +118,7 @@ unsigned int lastLoopCnt = 0;
 
 void setup()
 {
-  InitSerial(); 
+  InitSerial(); // ArticuBots uplink, uses Serial/USB.
 
   InitLeds();
   
@@ -137,13 +135,11 @@ void setup()
 
   InitializeI2c();
 
-  mympu_open(200);   // see C:\Projects\Arduino\Sketchbook\MotionPlug    rate: Desired fifo rate (Hz), max 200
-
   // ======================== init motors and encoders: ===================================
 
   MotorsInit();
 
-  EncodersInit();    // attach interrupts
+  EncodersInit();    // Initialize the encoders - attach interrupts
 
   odometry = new DifferentialDriveOdometry();
   odometry->Init(wheelBaseMeters, wheelRadiusMeters, encoderTicksPerRevolution);
@@ -187,7 +183,7 @@ void loop() //Main Loop
   delay(3000);
   testDir = !testDir;
   return;
-  /**/
+*/
   
   //delay(1); // 1 ms
 
@@ -198,10 +194,6 @@ void loop() //Main Loop
   {
     while((micros() - timer) < STD_LOOP_TIME)
     {
-      mympu_update();   // Main loop runs at 200Hz (mydt=5), to allow frequent sampling of AHRS
-
-      readGpsUplink();
-
       readCommCommand();  // reads desiredSpeed and reports odometry
     }
   }
@@ -251,6 +243,12 @@ void loop() //Main Loop
   
     desiredSpeedL = joystickSpeedL;
     desiredSpeedR = joystickSpeedR;
+
+  //  myPID_L.SetMode(MANUAL);  // Disables PID, input goes straight to PWM
+  //  myPID_R.SetMode(MANUAL);
+  //} else {
+  //  myPID_L.SetMode(AUTOMATIC);
+  //  myPID_R.SetMode(AUTOMATIC);
   }
 
 #ifdef USE_EMA
@@ -281,9 +279,12 @@ void loop() //Main Loop
     // }      
 
     // test: At both motors set to +80 expect Ldistance and Rdistance to increase
-    //pwm_R = 80;
-    //pwm_L = 80;
-    //pwm_L = 255;  // measure full speed distR and distL. See SpeedControl tab.
+    //pwm_R = 80.0;
+    //pwm_L = 80.0;
+    //if(!isControlByJoystick()) {
+    //  pwm_L = 255.0;  // measure full speed distR and distL. See SpeedControl tab.
+    //  pwm_R = 255.0;
+    //}
 
     set_motors();
 
@@ -311,7 +312,6 @@ void loop() //Main Loop
     //digitalWrite(10, LOW);
 
     digitalWriteFast(redLedPin, millis() - lastCommMs > 1000 ? HIGH : LOW);
-    digitalWriteFast(yellowLedPin, millis() - lastImuMs > 1000 ? HIGH : LOW);
     digitalWriteFast(whiteLedPin, millis() - lastMotorCommandMs > 1000 ? HIGH : LOW);
     digitalWriteFast(blueLedPin, millis() - lastSonarMs > 1000 ? HIGH : LOW);
 

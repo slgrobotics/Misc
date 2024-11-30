@@ -7,8 +7,14 @@ void speed_calculate()
   distR = Rdistance - RdistancePrev; // Plucky robot: ~80 with 10Hz cycle, at full power (pwm=255) and wheels in the air
   distL = Ldistance - LdistancePrev;
 
+  // note: this is the place to scale -100..100% speed to 255 pwm:
   speedMeasured_R = (double)map(distR, -80, 80, -100, 100);  // first pair is number of ticks at full speed, we map it to 100%
   speedMeasured_L = (double)map(distL, -80, 80, -100, 100);
+
+  // we don't need to keep track of total distances per wheel, only increments - for speed loop.
+  // beware - if EncodersReset() is not called often enough, L/Rdistance will
+  // overflow at 32K and cause violent jerking of the wheels!
+  //EncodersReset();
 
   RdistancePrev = Rdistance;
   LdistancePrev = Ldistance;
@@ -19,16 +25,15 @@ void speed_calculate()
 // **********************************************
 void pwm_calculate()
 {
-      // "desiredSpeed" comes in the range -100...100 - it has a meaning of "percent of max speed"
-
-      //dpwm_R = map(desiredSpeedR, -100, 100, -255, 255);
-      //dpwm_L = map(desiredSpeedL, -100, 100, -255, 255);
-
-      // pick up values computed by PIDs:
+      // pick up values computed by PIDs. We must do it in float:
       pwm_R += (int)dpwm_R;
       pwm_L += (int)dpwm_L;
 
-      // we let set_motor() constrain pwm_L and pwm_R to -255...255
+      // do not allow float values to grow beyond motor maximums:
+      pwm_R = constrain(pwm_R, -255.0, 255.0);     // Maximum / Minimum Limitations
+      pwm_L = constrain(pwm_L, -255.0, 255.0);
+  
+      // we also let set_motor() constrain local integer ipwm_L and ipwm_R to -255...255
 }
 
 // ------------------------------------------------------------------------------------------------------

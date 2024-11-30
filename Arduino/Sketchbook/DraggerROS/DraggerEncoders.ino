@@ -2,11 +2,13 @@
 // interrupts:
 // Most Arduino boards have two external interrupts: number 0 (on digital pin 2) and 1 (on digital pin 3)
 
-const int ENCODER_L_A = 3;    // side L (interrupt 0, Left encoder)
+const int ENCODER_L_A = 3;    // side L (interrupt 1, Left encoder)
 const int ENCODER_L_B = 9;    // side L data
 
-const int ENCODER_R_A = 2;    // side R (interrupt 1, Right encoder)
+const int ENCODER_R_A = 2;    // side R (interrupt 0, Right encoder)
 const int ENCODER_R_B = 8;    // side R data
+
+// we use Oak Grigsby Optical Encoders, type 96Q100-50-00355
 
 // **************************
 //     Init the Encoders
@@ -31,8 +33,8 @@ void EncodersReset()
 {
   Ldistance = 0;
   Rdistance = 0;
-  RdistancePrev = 0;
   LdistancePrev = 0;
+  RdistancePrev = 0;
 }
 
 // ********************************************************
@@ -79,4 +81,3 @@ void rightEncoder()
   }
   //digitalWrite(10, LOW);
 }
-
