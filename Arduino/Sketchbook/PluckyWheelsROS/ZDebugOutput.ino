@@ -55,39 +55,43 @@ void printAll()
     Serial.print((loopCnt - lastLoopCnt) / (PRINT_INTERVAL_MS / 1000));
     Serial.println(" loops/sec");
 
-    Serial.print("Motors:   Right pwm_R: ");
-    Serial.print(pwm_R);
-    Serial.print("       Left pwm_L: ");
-    Serial.println(pwm_L);
-
-    Serial.print("Speed:   Right: ");
-    Serial.print(speedMeasured_R);
+    Serial.print("Desired speed %:   Right: ");
+    Serial.print(setpointSpeedR);
     Serial.print("       Left: ");
-    Serial.println(speedMeasured_L);
-
-    Serial.print("PID_L:   speedMeasured_L: ");
-    Serial.print(speedMeasured_L);
-    Serial.print("       dpwm_L: ");
-    Serial.print(dpwm_L);
-    Serial.print("       distL: ");
-    Serial.print(distL);
-    Serial.print("       desiredSpeedL: ");
-    Serial.println(desiredSpeedL);
-
+    Serial.println(setpointSpeedL);
+  
     Serial.print("Encoders:  Right Rdistance: ");
     Serial.print(Rdur);
     Serial.print("       Left Ldistance: ");
     Serial.println(Ldur);
-
-    Serial.print("Odometry: X=");
-    Serial.print(X);
-    Serial.print("    Y=");
-    Serial.print(Y);
-    Serial.print(" meters    Theta=");
-    Serial.print(Theta);
-    Serial.print("  (");
-    Serial.print(to360(Theta * 57.295));
-    Serial.println(" degrees)");
+  
+    Serial.print("Measured speed %:   Right: ");
+    Serial.print(speedMeasured_R);
+    Serial.print("       Left: ");
+    Serial.println(speedMeasured_L);
+  
+    Serial.print("PID:   Right dpwm_R: ");
+    Serial.print(dpwm_R);
+    Serial.print("       Left dpwm_L: ");
+    Serial.println(dpwm_L);
+  
+    Serial.print("Motors:   Right pwm_R: ");
+    Serial.print(pwm_R);
+    Serial.print("       Left pwm_L: ");
+    Serial.println(pwm_L);
+    
+    Serial.print("Joystick:   in control: ");
+    Serial.print(isControlByJoystick());
+    Serial.print("  pressed: ");
+    Serial.print(isJoystickPressed());
+    Serial.print(" X: ");
+    Serial.print(joystickX());
+    Serial.print(" Y: ");
+    Serial.print(joystickY());
+    Serial.print(" joystick speed L: ");
+    Serial.print(joystickSpeedL);
+    Serial.print(" speed R: ");
+    Serial.println(joystickSpeedR);
 
     lastLoopCnt = loopCnt;
   }

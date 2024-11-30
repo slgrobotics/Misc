@@ -6,7 +6,7 @@
                                // and http://code.google.com/p/digitalwritefast/
                                // and http://www.hessmer.org/blog/2011/01/30/quadrature-encoder-too-fast-for-arduino/
 
-#include <Odometry.h>
+#include <Wire.h>
 #include <PID_v1.h>
 //#include <PID_v1_bc.h>
 
@@ -36,7 +36,7 @@ const int blueLedPin  = 31;
 
 const int batteryInPin = A4;  // Analog input pin that the battery 1/3 divider is attached to. "900" = 13.713V
 
-// TBD: #define SONAR_I2C_ADDRESS 9   // parking sonar sensor, driven by Arduino Pro Mini (ParkingSensorI2C.ino)
+#define SONAR_I2C_ADDRESS 9   // parking sonar sensor, driven by Arduino Pro Mini (ParkingSensorI2C.ino)
 
 const int mydt = 5;           // 5 milliseconds make for 200 Hz operating cycle
 const int pidLoopFactor = 20; // factor of 20 make for 100ms PID cycle
@@ -85,13 +85,6 @@ const int EmaPeriod = 20;
 double wheelBaseMeters = 0.580;
 double wheelRadiusMeters = 0.192;
 double encoderTicksPerRevolution = 13730; // one wheel rotation
-
-// current robot pose, updated by odometry:
-double X;      // meters
-double Y;      // meters
-double Theta;  // radians, positive clockwise
-
-DifferentialDriveOdometry *odometry;
 
 // higher Ki causes residual rotation, higher Kd - jerking movement
 PID myPID_R(&speedMeasured_R, &dpwm_R, &setpointSpeedR, 1.0, 0.0, 0.08, DIRECT);    // in, out, setpoint, double Kp, Ki, Kd, DIRECT or REVERSE
@@ -145,12 +138,11 @@ void setup()
   pinMode(10, OUTPUT);
   pinMode(11, OUTPUT);
 
+  InitializeI2c();
+
   MotorsInit();
   
   EncodersInit();    // Initialize the encoders - attach interrupts
-
-  odometry = new DifferentialDriveOdometry();
-  odometry->Init(wheelBaseMeters, wheelRadiusMeters, encoderTicksPerRevolution);
 
   setEmaPeriod(RightMotorChannel, EmaPeriod);
   setEmaPeriod(LeftMotorChannel, EmaPeriod);
@@ -183,7 +175,7 @@ void loop() //Main Loop
   {
     while((micros() - timer) < STD_LOOP_TIME)
     {
-      readCommCommand();  // reads desiredSpeed and reports odometry
+      readCommCommand();  // reads desiredSpeed
     }
   }
   
@@ -254,7 +246,7 @@ void loop() //Main Loop
   myPID_R.Compute();
   myPID_L.Compute();
 
-  if(isPidLoop)  // we do speed PID and odometry calculation on a slower scale, about 20Hz
+  if(isPidLoop)  // we do speed PID and calculation on a slower scale, about 20Hz
   {  
     // based on PWM increments, calculate speed:
     speed_calculate();
@@ -278,27 +270,6 @@ void loop() //Main Loop
 
     set_motors();
   
-    // odometry calculation takes 28us
-    //digitalWrite(10, HIGH);
-    // process encoders readings into X, Y, Theta using odometry library:
-    odometry->wheelEncoderLeftTicks = Ldistance;
-    odometry->wheelEncoderRightTicks = Rdistance;
-  
-    odometry->Process();
-  
-    if (odometry->displacement.halfPhi != 0.0 || odometry->displacement.dCenter != 0.0)
-    {
-      double theta = Theta + odometry->displacement.halfPhi;   // radians
-  
-      // calculate displacement in the middle of the turn:
-      double dX = odometry->displacement.dCenter * cos(theta);      // meters
-      double dY = odometry->displacement.dCenter * sin(theta);      // meters
-  
-      X += dX;
-      Y += dY;
-      
-      Theta += odometry->displacement.halfPhi * 2.0;
-    }
     //digitalWrite(10, LOW);
     
     digitalWriteFast(redLedPin, millis() - lastCommMs > 1000 ? HIGH : LOW);

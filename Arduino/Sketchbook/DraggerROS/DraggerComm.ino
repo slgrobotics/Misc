@@ -16,18 +16,6 @@ int freeRam () {
 #define BAUDRATE_ARTICUBOTS 115200
 #define DO_RESPOND_OK
 
-// ==== To be moved to I2C.ino: =====
-
-void receiveI2cSonarPacket() {
-}
-
-double lastCompassYaw = 0.0;
-
-void receiveI2cCompassPacket() {
-}
-
-// ==================================
-
 void InitSerial() {
 
   COMM_SERIAL.begin(BAUDRATE_ARTICUBOTS);  // start serial for USB to Raspberry Pi
@@ -337,4 +325,3 @@ void setMotorSpeeds(int leftSpeed, int rightSpeed) {
   setMotorSpeed(LEFT, leftSpeed);
   setMotorSpeed(RIGHT, rightSpeed);
 }
-

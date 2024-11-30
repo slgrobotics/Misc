@@ -7,7 +7,6 @@
                                // and http://www.hessmer.org/blog/2011/01/30/quadrature-encoder-too-fast-for-arduino/
 
 #include <Wire.h>
-#include <Odometry.h>
 #include <PID_v1.h>
 //#include <PID_v1_bc.h>
 
@@ -80,13 +79,6 @@ double wheelBaseMeters = 0.600;
 double wheelRadiusMeters = 0.192;
 double encoderTicksPerRevolution = 2506; // now has 16T sprocket. Prior art - 47T sprocket: 853;  // one wheel rotation
 
-// current robot pose, updated by odometry:
-double X;      // meters
-double Y;      // meters
-double Theta;  // radians, positive clockwise
-
-DifferentialDriveOdometry *odometry;
-
 // higher Ki causes residual rotation, higher Kd - jerking movement
 PID myPID_R(&speedMeasured_R, &dpwm_R, &setpointSpeedR, 1.0, 0, 0.05, DIRECT);    // in, out, setpoint, double Kp, Ki, Kd, DIRECT or REVERSE
 PID myPID_L(&speedMeasured_L, &dpwm_L, &setpointSpeedL, 1.0, 0, 0.05, DIRECT);
@@ -141,9 +133,6 @@ void setup()
 
   EncodersInit();    // Initialize the encoders - attach interrupts
 
-  odometry = new DifferentialDriveOdometry();
-  odometry->Init(wheelBaseMeters, wheelRadiusMeters, encoderTicksPerRevolution);
-
   setEmaPeriod(RightMotorChannel, EmaPeriod);
   setEmaPeriod(LeftMotorChannel, EmaPeriod);
   
@@ -194,7 +183,7 @@ void loop() //Main Loop
   {
     while((micros() - timer) < STD_LOOP_TIME)
     {
-      readCommCommand();  // reads desiredSpeed and reports odometry
+      readCommCommand();  // reads desiredSpeed
     }
   }
   
@@ -264,7 +253,7 @@ void loop() //Main Loop
   myPID_R.Compute();
   myPID_L.Compute();
 
-  if(isPidLoop)  // we do speed PID and odometry calculation on a slower scale, about 20Hz
+  if(isPidLoop)  // we do speed PID calculation on a slower scale, about 20Hz
   {
     // based on PWM increments, calculate speed:
     speed_calculate();
@@ -288,27 +277,6 @@ void loop() //Main Loop
 
     set_motors();
 
-    // odometry calculation takes 28us
-    //digitalWrite(10, HIGH);
-    // process encoders readings into X, Y, Theta using odometry library:
-    odometry->wheelEncoderLeftTicks = Ldistance;
-    odometry->wheelEncoderRightTicks = Rdistance;
-  
-    odometry->Process();
-  
-    if (odometry->displacement.halfPhi != 0.0 || odometry->displacement.dCenter != 0.0)
-    {
-      double theta = Theta + odometry->displacement.halfPhi;   // radians
-  
-      // calculate displacement in the middle of the turn:
-      double dX = odometry->displacement.dCenter * cos(theta);      // meters
-      double dY = odometry->displacement.dCenter * sin(theta);      // meters
-  
-      X += dX;
-      Y += dY;
-      
-      Theta += odometry->displacement.halfPhi * 2.0;
-    }
     //digitalWrite(10, LOW);
 
     digitalWriteFast(redLedPin, millis() - lastCommMs > 1000 ? HIGH : LOW);
