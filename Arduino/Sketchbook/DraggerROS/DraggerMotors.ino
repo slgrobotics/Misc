@@ -3,16 +3,11 @@
 const int EN_A   = 5;
 const int RPWM_A = 6;
 const int LPWM_A = 7;
-//const boolean reverse_A = false;
 
 // H-Bridge Side B:
 const int EN_B   = 4;
 const int RPWM_B = 44;
 const int LPWM_B = 45;
-//const boolean reverse_B = true;
-
-//#define ATHB_MOTORS_ENABLE   LOW
-//#define ATHB_MOTORS_DISABLE HIGH
 
 #define DEADZONE 0
 
@@ -29,8 +24,6 @@ void MotorsInit()
   pinModeFast(EN_B,   OUTPUT);
   pinMode(RPWM_B, OUTPUT);
   pinMode(LPWM_B, OUTPUT);
-
-  //digitalWriteFast(DIS_AB, HIGH);  // disable for now;
 
   setTimerForPWM();
 

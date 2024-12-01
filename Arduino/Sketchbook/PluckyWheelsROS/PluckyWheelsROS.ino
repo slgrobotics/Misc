@@ -192,13 +192,10 @@ void loop() //Main Loop
   timer = micros();
 
   boolean isPidLoop = loopCnt % pidLoopFactor == 0;
+
 #ifdef TRACE
   boolean isPrintLoop = printLoopCnt++ >= printLoopFactor;
-#endif
 
-  //digitalWrite(11, HIGH);
-
-#ifdef TRACE
   if (isPrintLoop)
   {
     printLoopCnt = 0;
@@ -277,8 +274,6 @@ void loop() //Main Loop
 
     set_motors();
 
-    //digitalWrite(10, LOW);
-
     digitalWriteFast(redLedPin, millis() - lastCommMs > 1000 ? HIGH : LOW);
     digitalWriteFast(whiteLedPin, millis() - lastMotorCommandMs > 1000 ? HIGH : LOW);
     digitalWriteFast(blueLedPin, millis() - lastSonarMs > 1000 ? HIGH : LOW);
@@ -288,7 +283,6 @@ void loop() //Main Loop
   }
 
   // we are done in about 3.4ms
-  //digitalWrite(11, LOW);
 
   // mark how much time we spent:
   lastLoopUsefulTime = micros() - timer;

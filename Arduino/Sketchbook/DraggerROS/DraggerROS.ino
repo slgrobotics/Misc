@@ -130,13 +130,9 @@ void setup()
   myPID_L.SetSampleTime(PID_SAMPLE_TIME);
   myPID_L.SetMode(AUTOMATIC);
 
-  // enable pull-up resistor on RX3 pin to help bluetooth module with signal levels:
-  //pinMode(15, INPUT);
-  //digitalWrite(15, HIGH);
-
   // DEBUG pins:
-  pinMode(10, OUTPUT);
-  pinMode(11, OUTPUT);
+  //pinMode(10, OUTPUT);
+  //pinMode(11, OUTPUT);
 
   InitializeI2c();
 
@@ -179,19 +175,15 @@ void loop() //Main Loop
     }
   }
 
-  //digitalWrite(10, HIGH);
   loopCnt++;
   timer_old = timer;
   timer = micros();
 
   boolean isPidLoop = loopCnt % pidLoopFactor == 0;
+  
 #ifdef TRACE
   boolean isPrintLoop = printLoopCnt++ >= printLoopFactor;
-#endif
 
-  //digitalWrite(11, HIGH);
-
-#ifdef TRACE
   if (isPrintLoop)
   {
     printLoopCnt = 0;
@@ -270,8 +262,6 @@ void loop() //Main Loop
 
     set_motors();
 
-    //digitalWrite(10, LOW);
-
     digitalWriteFast(redLedPin, millis() - lastCommMs > 1000 ? HIGH : LOW);
     //digitalWriteFast(whiteLedPin, millis() - lastMotorCommandMs > 1000 ? HIGH : LOW);
     //digitalWriteFast(blueLedPin, millis() - lastSonarMs > 1000 ? HIGH : LOW);
@@ -281,7 +271,6 @@ void loop() //Main Loop
   }
 
   // we are done in about 3.4ms
-  //digitalWrite(11, LOW);
 
   // mark how much time we spent:
   lastLoopUsefulTime = micros() - timer;
@@ -304,5 +293,4 @@ void loop() //Main Loop
   */
 
   // let operating environment work (maybe taking time) and reenter the loop()
-  //digitalWrite(10, LOW);
 }

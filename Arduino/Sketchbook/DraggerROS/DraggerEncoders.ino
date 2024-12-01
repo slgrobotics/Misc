@@ -45,7 +45,6 @@ void EncodersReset()
 void leftEncoder()
 {
   // we spend around 12.5us in the interrupt, at approx 1,5-2kHz frequency at pwm=80
-  //digitalWrite(10, HIGH);
 
   // for all boards we use digitalReadFast():
   boolean vi = digitalReadFast(ENCODER_L_A) == 0; //(PIND & _BV(PIND3)) == 0; // read pin D3 (PD3 on UNO)
@@ -53,19 +52,15 @@ void leftEncoder()
 
   if (vi == vd)
   {
-    //digitalWrite(11, LOW);
     Ldistance++;                // wheel moves forward, positive increase
   } else {
-    //digitalWrite(11, HIGH);
     Ldistance--;
   }
-  //digitalWrite(10, LOW);
 }
 
 void rightEncoder()
 {
   // we spend around 12.5us in the interrupt, at approx 1,5-2kHz frequency at pwm=80
-  //digitalWrite(10, HIGH);
 
   // for all boards we use digitalReadFast():
   boolean vi = digitalReadFast(ENCODER_R_A) == 0; //(PIND & _BV(PIND2)) == 0; // read pin D2 (PD2 on UNO)
@@ -73,11 +68,8 @@ void rightEncoder()
 
   if (vi == vd)
   {
-    //digitalWrite(11, LOW);
     Rdistance--;
   } else {
-    //digitalWrite(11, HIGH);
     Rdistance++;                // wheel moves forward, positive increase
   }
-  //digitalWrite(10, LOW);
 }
