@@ -22,9 +22,12 @@
  * although doing so, donating and contributing code and feedback is always appreciated
  * https://www.paypal.me/vitalbytes
  */
- 
-//#define PARKINGSENSOR_MODEL_1
-#define PARKINGSENSOR_MODEL_2
+
+// See https://github.com/slgrobotics/robots_bringup
+
+// Model_1 for Dragger
+#define PARKINGSENSOR_MODEL_1
+//#define PARKINGSENSOR_MODEL_2
 
 #define USE_VOTING
 // produce serial output (I2C only if false):
@@ -146,5 +149,3 @@ void loop() {
   }
   delay(10);
 }
-
-

@@ -6,6 +6,8 @@
 // and http://code.google.com/p/digitalwritefast/
 // and http://www.hessmer.org/blog/2011/01/30/quadrature-encoder-too-fast-for-arduino/
 
+// See https://github.com/slgrobotics/robots_bringup
+
 #include <Wire.h>
 #include <PID_v1.h>
 //#include <PID_v1_bc.h>
