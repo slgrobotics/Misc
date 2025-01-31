@@ -1,7 +1,18 @@
+
+#define VERY_CLOSE_RANGE_CM 20
+
 void InitializeI2c()
 {
-  Wire.begin(); // Start I2C Bus as Master
-  //Fastwire::setup(400, 0);
+  Wire.begin(); // Start I2C Bus as Master, clock at 100kHz by default
+  //Wire.setClock( 400000UL); // clock at 400 kHz
+ #if defined(WIRE_HAS_TIMEOUT)
+  // see https://docs.arduino.cc/language-reference/en/functions/communication/wire/setWireTimeout/
+  Wire.setWireTimeout(3000 /* us */, true /* reset_on_timeout */);
+ #endif
+
+#ifdef TRACE
+  Serial.println("I2C Master ready...");
+#endif // TRACE
 }
 
 void receiveI2cSonarPacket()
@@ -10,8 +21,31 @@ void receiveI2cSonarPacket()
 
   int checksum = 0;
 
-  Wire.requestFrom(SONAR_I2C_ADDRESS, 6);    // request 6 bytes from slave device
+#if defined(WIRE_HAS_TIMEOUT)
+  Wire.clearWireTimeoutFlag();
+#endif
 
+  byte len = Wire.requestFrom(SONAR_I2C_ADDRESS, 6);    // request 6 bytes from slave device
+
+  if (len != 6) {
+    
+#ifdef TRACE
+    Serial.print("I2C Error occured when reading sonar, len=");
+    Serial.println(len);
+  #if defined(WIRE_HAS_TIMEOUT)
+    if (Wire.getWireTimeoutFlag())
+    {
+      Serial.println("It was a timeout");
+    }
+  #endif
+#endif // TRACE
+
+    if(millis() - lastSonarMs > 2000)  // no ping for more than 2 seconds
+    {
+      rangeFRcm = rangeFLcm = rangeBRcm = rangeBLcm = VERY_CLOSE_RANGE_CM; // set to minimum
+    }
+    return;
+  }
   int i = 1;
   while (Wire.available())  // slave may send less than requested
   {
@@ -59,12 +93,9 @@ void receiveI2cSonarPacket()
     //    Serial.println(checksum);
     lastSonarMs = millis();
   }
-  else
+  else if(millis() - lastSonarMs > 2000)  // no ping for more than 2 seconds
   {
-    //    Serial.println("Error: bad transmission from Slave");
-    rangeFRcm = -1;
-    rangeFLcm = -1;
-    rangeBRcm = -1;
-    rangeBLcm = -1;
+    //    Serial.println("Error: bad transmission from I2C Slave");
+    rangeFRcm = rangeFLcm = rangeBRcm = rangeBLcm = VERY_CLOSE_RANGE_CM; // set to minimum
   }
 }

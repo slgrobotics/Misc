@@ -9,6 +9,10 @@
 // See https://github.com/slgrobotics/robots_bringup
 
 #include <Wire.h>
+
+// looks like AVR MCs don't have this defined, but it works:
+#define WIRE_HAS_TIMEOUT
+
 #include <PID_v1.h>
 //#include <PID_v1_bc.h>
 

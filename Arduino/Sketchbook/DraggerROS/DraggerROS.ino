@@ -1,4 +1,4 @@
-//#define TRACE
+#define TRACE
 //#define USE_EMA
 
 #include <digitalWriteFast.h>  // library for high performance reads and writes by jrraines
@@ -9,6 +9,10 @@
 // See https://github.com/slgrobotics/robots_bringup
 
 #include <Wire.h>
+
+// looks like AVR MCs don't have this defined, but it works:
+#define WIRE_HAS_TIMEOUT
+
 #include <PID_v1.h>
 //#include <PID_v1_bc.h>
 

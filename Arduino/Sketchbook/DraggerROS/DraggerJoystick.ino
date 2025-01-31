@@ -1,5 +1,5 @@
-#define JOYSTICK_ACTIVATE_PIN 20
-#define JOYSTICK_PRESSED_PIN 21
+#define JOYSTICK_ACTIVATE_PIN 22
+#define JOYSTICK_PRESSED_PIN 24
 
 const int AD_Xpin = 0;         // Joystick X pin
 const int AD_Ypin = 1;         // Joystick Y pin

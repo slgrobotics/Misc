@@ -53,6 +53,15 @@ void printAll()
   Serial.print(joystickSpeedL);
   Serial.print(" speed R: ");
   Serial.println(joystickSpeedR);
+
+  Serial.print("Sonar: FR: ");
+  Serial.print(rangeFRcm);
+  Serial.print(" FL: ");
+  Serial.print(rangeFLcm);
+  Serial.print(" BR: ");
+  Serial.print(rangeBRcm);
+  Serial.print(" BL: ");
+  Serial.println(rangeBLcm);
 }
 #endif
 
