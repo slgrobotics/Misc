@@ -1,4 +1,4 @@
-#define TRACE
+//#define TRACE
 //#define USE_EMA
 
 #include <digitalWriteFast.h>  // library for high performance reads and writes by jrraines
