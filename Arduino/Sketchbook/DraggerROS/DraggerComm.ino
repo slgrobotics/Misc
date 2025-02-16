@@ -229,11 +229,12 @@ void runCommand() {
       break;
     case READ_HEALTH:
       {
-        long bat = analogRead(batteryInPin); // "900" here relates to battery voltage 13.713V
-        bat = bat * 13713 / 900; // millivolts, returns "12000" for 12V
-        //long bat = 12000;
-        int current_ma = -1;  // TODO: need to measure it
-        sprintf(&out_buf[2], "%ld %d %d\r", bat, current_ma, freeRam());
+        long voltage_mv = analogRead(batteryVoltageInPin); // "900" here relates to battery voltage 13.713V
+        voltage_mv = voltage_mv * 13713 / 900; // millivolts, returns "12000" for 12V
+        long current_ma = analogRead(batteryCurrentInPin);
+        current_ma = max(39l,current_ma);
+        current_ma = (current_ma - 39l) * 4530l / 148l; // milliamperes, returns 148 for 4.53A
+        sprintf(&out_buf[2], "%ld %ld %d\r", voltage_mv, current_ma, freeRam());
         respond();
       }
       break;
