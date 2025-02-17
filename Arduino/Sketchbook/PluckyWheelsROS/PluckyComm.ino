@@ -229,11 +229,15 @@ void runCommand() {
       break;
     case READ_HEALTH:
       {
-        long bat = analogRead(batteryInPin); // "800" here relates to battery voltage 11.72V = 3.90V per cell
-        //bat = bat * 39 / 8; // millivolts, returns "4031" for 4.031V per cell
-        bat = bat * 117 / 8; // millivolts, returns "12000" for 12.0V
-        int current_ma = -1; // TODO: need to measure it
-        sprintf(&out_buf[2], "%ld %d %d\r", bat, current_ma, freeRam());
+        long voltage_mv = analogRead(batteryVoltageInPin); // "800" here relates to battery voltage 11.72V = 3.90V per cell
+        //voltage_mv = voltage_mv * 39l / 8l; // millivolts, returns "4031" for 4.031V per cell
+        voltage_mv = voltage_mv * 117l / 8l; // millivolts, returns "12000" for 12.0V
+        long current_ma = analogRead(batteryCurrentInPin);
+        //current_ma = 529l + 51l;
+        current_ma = max(51l,current_ma);
+        current_ma = (current_ma - 51l) * 3730l / 529l; // milliamperes, returns 580 for 3.73A
+        //current_ma = (current_ma - 51l); // direct A/D reading, after offset
+        sprintf(&out_buf[2], "%ld %d %d\r", voltage_mv, current_ma, freeRam());
         respond();
       }
       break;

@@ -33,7 +33,8 @@ const int blueLedPin = 50;
 const int greenLedPin = 53;
 const int whiteLedPin = 52;
 
-const int batteryInPin = A3;  // Analog input pin that the battery 1/3 divider is attached to. "800" = 3.90V per cell (11.72V).
+const int batteryVoltageInPin = A3;  // Analog input pin that the battery 1/3 divider is attached to. "800" = 3.90V per cell (11.72V).
+const int batteryCurrentInPin = A6;  // Analog input pin that the current sensor is attached to.
 
 #define SONAR_I2C_ADDRESS 9   // parking sonar sensor, driven by Arduino Pro Mini (ParkingSensorI2C.ino)
 
