@@ -71,7 +71,7 @@ int setMotorPower(int pwr)
   return pwr;
 }
 
-int toMotorPower(int pwr)  // pwr expected to be 0...255, otherwise will be constrained to 0...240
+int toMotorPower(int pwr)  // pwr expected to be 0...255, otherwise will be constrained
 {
   int PWM = constrain(pwr, 0, 255);     // Maximum / Minimum Limitations for pwm
 

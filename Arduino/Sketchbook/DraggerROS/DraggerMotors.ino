@@ -1,15 +1,17 @@
 
-// H-Bridge Side A:
-const int EN_A   = 5;
-const int RPWM_A = 6;
-const int LPWM_A = 7;
+// Left Wheel IBT-2 H-Bridge:
+const int L_EN   = 5; // pins 3 & 4 connected on IBT-2
+const int L_RPWM = 6; // Right side of the H-Bridge 
+const int L_LPWM = 7; // Left side of the H-Bridge 
 
-// H-Bridge Side B:
-const int EN_B   = 4;
-const int RPWM_B = 44;
-const int LPWM_B = 45;
+// Right Wheel IBT-2 H-Bridge:
+const int R_EN   = 4;
+const int R_RPWM = 44;
+const int R_LPWM = 45;
 
 #define DEADZONE 0
+// if we are given pwm > FULLZONE, we just switch H-Bridge to full ON:
+#define FULLZONE 250
 
 void MotorsInit()
 {
@@ -18,110 +20,146 @@ void MotorsInit()
   // Note: PWM pins cannot be controlled by Fast library. They remain in PWM mode.
 
   //pinModeFast(DIS_AB,   OUTPUT);
-  pinModeFast(EN_A,   OUTPUT);
-  pinMode(RPWM_A, OUTPUT);
-  pinMode(LPWM_A, OUTPUT);
-  pinModeFast(EN_B,   OUTPUT);
-  pinMode(RPWM_B, OUTPUT);
-  pinMode(LPWM_B, OUTPUT);
+  pinModeFast(L_EN,   OUTPUT);
+  pinMode(L_RPWM, OUTPUT);
+  pinMode(L_LPWM, OUTPUT);
+  pinModeFast(R_EN,   OUTPUT);
+  pinMode(R_RPWM, OUTPUT);
+  pinMode(R_LPWM, OUTPUT);
 
   setTimerForPWM();
 
-  StopMotors();    // make sure motors are stopped
+  stopMotor(true);    // make sure motors are stopped
+  stopMotor(false);
 }
 
 // ***********************************************************************
-//   Set motor power for both motors. Positive is forward. Takes 0.12ms
+//   Set motor power for both motors. Positive is forward.
 // ***********************************************************************
 void set_motors()
 {
   int pwr;
 
-  int ipwm_R = (int)pwm_R;
-  int ipwm_L = (int)pwm_L;
+  int ipwm_R = -(int)pwm_R;
+  int ipwm_L = -(int)pwm_L;
 
   ipwm_R = constrain(ipwm_R, -255, 255);     // Maximum / Minimum Limitations
   ipwm_L = constrain(ipwm_L, -255, 255);
-
-  // Set Right wheel's direction and speed
+  
+  // Set Right wheel's direction and speed:
   if (ipwm_R == 0)
   {
-    // park and brake:
-    digitalWrite(RPWM_B, HIGH);
-    digitalWrite(LPWM_B, HIGH);
+    stopMotor(false);
   }
   else if (ipwm_R > 0)
   {
-    if (DEADZONE > 0)
-      ipwm_R = map(ipwm_R, 1, 255, DEADZONE + 1, 255);
-
+    digitalWrite(R_LPWM, LOW);
     pwr = toMotorPower(ipwm_R);
-    // Rotate forward: EN = 1, RPWM = PWM, LPWM = 1, DIS = vacant
-    // Arduino generates 488Hz PWM propportional to analogWrite value:
-    analogWrite( LPWM_B, (byte)(255 - pwr));  // 0 is max speed; 255 - min speed
-    digitalWrite(RPWM_B, HIGH);
+    if (pwr > FULLZONE)
+    {
+      // in Full Zone we just switch bridge side to ON:
+      digitalWrite(R_RPWM, HIGH);
+    } 
+    else 
+    {
+      // Arduino generates 488Hz PWM propportional to analogWrite value:
+      analogWrite(R_RPWM, pwr);
+    }
   }
-  else // ipwm_R < 0
+  else  // ipwm_R < 0
   {
-    if (DEADZONE > 0)
-      ipwm_R = map(ipwm_R, -1, -255, -DEADZONE - 1, -255);
-
+    digitalWrite(R_RPWM, LOW);
     pwr = toMotorPower(-ipwm_R);
-    // Rotate reverse: EN = 1, RPWM = 1, LPWM = PWM, DIS = vacant
-    analogWrite( RPWM_B, (byte)(255 - pwr));
-    digitalWrite(LPWM_B, HIGH);
+    if (pwr > FULLZONE)
+    {
+      // in Full Zone we just switch bridge side to ON:
+      digitalWrite(R_LPWM, HIGH);
+    } 
+    else 
+    {
+      // Arduino generates 488Hz PWM propportional to analogWrite value:
+      analogWrite(R_LPWM, pwr);
+    }
   }
-
+  
   // Set Left wheel's direction and speed:
   if (ipwm_L == 0)
   {
-    // park and brake:
-    digitalWrite(RPWM_A, HIGH);
-    digitalWrite(LPWM_A, HIGH);
+    stopMotor(true);
   }
   else if (ipwm_L > 0)
   {
-    if (DEADZONE > 0)
-      ipwm_L = map(ipwm_L, 1, 255, DEADZONE + 1, 255);
-
+    digitalWrite(L_LPWM, LOW);
     pwr = toMotorPower(ipwm_L);
-    // Rotate forward: EN = 1, RPWM = PWM, LPWM = 1, DIS = vacant
-    // Arduino generates 488Hz PWM propportional to analogWrite value:
-    analogWrite( RPWM_A, (byte)(255 - pwr));  // 0 is max speed; 255 - min speed
-    digitalWrite(LPWM_A, HIGH);
+    if (pwr > FULLZONE)
+    {
+      // in Full Zone we just switch bridge side to ON:
+      digitalWrite(L_RPWM, HIGH);
+    } 
+    else 
+    {
+      // Arduino generates 488Hz PWM propportional to analogWrite value:
+      analogWrite(L_RPWM, pwr);
+    }
   }
-  else // ipwm_L < 0
+  else  // ipwm_L < 0
   {
-    if (DEADZONE > 0)
-      ipwm_L = map(ipwm_L, -1, -255, -DEADZONE - 1, -255);
-
+    digitalWrite(L_RPWM, LOW);
     pwr = toMotorPower(-ipwm_L);
-    // Rotate reverse: EN = 1, RPWM = 1, LPWM = PWM, DIS = vacant
-    analogWrite( LPWM_A, (byte)(255 - pwr));
-    digitalWrite(RPWM_A, HIGH);
+    if (pwr > FULLZONE)
+    {
+      // in Full Zone we just switch bridge side to ON:
+      digitalWrite(L_LPWM, HIGH);
+    } 
+    else 
+    {
+      // Arduino generates 488Hz PWM propportional to analogWrite value:
+      analogWrite(L_LPWM, pwr);
+    }
   }
-
-  digitalWriteFast(EN_A, HIGH);
-  digitalWriteFast(EN_B, HIGH);
+  
+  digitalWriteFast(L_EN, HIGH);
+  digitalWriteFast(R_EN, HIGH);
 }
 
-int toMotorPower(int pwr)  // pwr expected to be 0...255, otherwise will be constrained to 0...240
+int toMotorPower(int pwr)  // pwr expected to be 0...255, otherwise will be constrained
 {
-  //pwr = 255 - pwr;
-  pwr = constrain(pwr, 0, 240);  // PWM duty cycle cannot be less than 98% per DBH-1B H-bridge specs
-  return pwr;
+  int PWM = constrain(pwr, 0, 255);     // Maximum / Minimum Limitations for pwm
+
+  if (DEADZONE > 0)
+    PWM = map(PWM, 1, 255, DEADZONE + 1, 255);
+
+  return PWM;
 }
 
-void StopMotors()  // Both Motors will stop and brake.
+void enableMotors(bool enable)
 {
-  // Parking but not brake: EN = 0, RPWM = 1, LPWM = 1, DIS = vacant
-  // Parking and brake: EN = 1, RPWM = 1, LPWM = 1, DIS = vacant
-  digitalWrite(RPWM_A, HIGH);
-  digitalWrite(LPWM_A, HIGH);
-  digitalWriteFast(EN_A, HIGH);
-  digitalWrite(RPWM_B, HIGH);
-  digitalWrite(LPWM_B, HIGH);
-  digitalWriteFast(EN_B, HIGH);
+  // EN High - enable both sides of the bridge:
+  digitalWrite(L_EN, enable ? HIGH : LOW);
+  digitalWrite(R_EN, enable ? HIGH : LOW);
+}
+
+void stopMotor(bool is_left)  // Motor will stop and brake.
+{
+  // Parking and brake: EN = 1, RPWM = 0, LPWM = 0
+  if(is_left) {
+    digitalWrite(L_RPWM, LOW);
+    digitalWrite(L_LPWM, LOW);
+  } else {
+    digitalWrite(R_RPWM, LOW);
+    digitalWrite(R_LPWM, LOW);
+  }
+  enableMotors(true);
+}
+
+void featherMotors()
+{
+  // Parking but not brake: EN = 0, RPWM = 1, LPWM = 1
+  digitalWrite(L_RPWM, LOW);
+  digitalWrite(L_LPWM, LOW);
+  digitalWrite(R_RPWM, LOW);
+  digitalWrite(R_LPWM, LOW);
+  enableMotors(false);
 }
 
 void setTimerForPWM()
