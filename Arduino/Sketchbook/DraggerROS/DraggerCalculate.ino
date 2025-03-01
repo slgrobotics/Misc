@@ -38,6 +38,7 @@ void pwm_calculate()
 
 // ------------------------------------------------------------------------------------------------------
 
+#ifdef USE_EMA
 // variables to compute exponential moving average:
 int emaPeriod[2];
 double valuePrev[2];
@@ -73,3 +74,4 @@ void setEmaPeriod(int ch, int period)
   emaPeriod[ch] = period;
   multiplier[ch] = 2.0 / (1.0 + (double)emaPeriod[ch]);
 }
+#endif // USE_EMA

@@ -1,5 +1,5 @@
 //#define TRACE
-//#define USE_EMA
+#define USE_EMA
 
 #include <digitalWriteFast.h>  // library for high performance reads and writes by jrraines
 // see http://www.arduino.cc/cgi-bin/yabb2/YaBB.pl?num=1267553811/0
@@ -82,8 +82,10 @@ double desiredSpeedL = 0.0;
 double setpointSpeedR = 0.0;
 double setpointSpeedL = 0.0;
 
+#ifdef USE_EMA
 const int RightMotorChannel = 0;  // index to ema*[] arrays
 const int LeftMotorChannel = 1;
+#endif // USE_EMA
 
 // EMA period to smooth wheels movement. 100 is smooth but fast, 300 is slow.
 const int EmaPeriod = 20;
@@ -147,8 +149,10 @@ void setup()
 
   EncodersInit();    // Initialize the encoders - attach interrupts
 
+#ifdef USE_EMA
   setEmaPeriod(RightMotorChannel, EmaPeriod);
   setEmaPeriod(LeftMotorChannel, EmaPeriod);
+#endif // USE_EMA
 
   pinMode(buzzerPin, OUTPUT);
   shortBuzz();
