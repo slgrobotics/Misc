@@ -85,10 +85,10 @@ double setpointSpeedL = 0.0;
 #ifdef USE_EMA
 const int RightMotorChannel = 0;  // index to ema*[] arrays
 const int LeftMotorChannel = 1;
-#endif // USE_EMA
 
 // EMA period to smooth wheels movement. 100 is smooth but fast, 300 is slow.
 const int EmaPeriod = 20;
+#endif // USE_EMA
 
 // Dragger robot physical parameters:
 double wheelBaseMeters = 0.580;
