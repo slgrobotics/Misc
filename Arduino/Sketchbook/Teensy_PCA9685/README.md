@@ -31,8 +31,17 @@ I am pretty sure there's a lot to improve in the code, and RPi Pico could be mad
 
 ### Hardware
 
-Here is how the hardware looks like in my case:
+Here is how the hardware looks like in my case.
+I am using [Teensy 4.0](https://www.amazon.com/Microcontroller-Development-Standard-Non-Lockable-Version/dp/B0CV19K9PY) with minimal added components.
+
+Note that you may need to cut a trace on Teensy 4.0 PCB to isolate USB power from your robot's power source:
+
+https://www.pjrc.com/teensy/external_power.html
+
+https://forum.pjrc.com/index.php?threads/teensy-4-0-using-external-power.66111/post-268771
 
 ![Screenshot from 2025-06-27 18-35-18](https://github.com/user-attachments/assets/73eedf14-32f1-43cf-9551-5a25e288963a)
+
+This is art, not engineering. That's my excuse - what's yours? ;-)
 
 ![Screenshot from 2025-06-27 18-36-02](https://github.com/user-attachments/assets/566b74eb-9e11-4167-9a04-71954c8c5571)
