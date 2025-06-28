@@ -15,7 +15,7 @@ When your small robot tries to run away - you just pick it up and reboot. When y
 
 Good people at Donkey Car published code to [emulate PCA9685](https://github.com/jwatte/donkey_racing/tree/master/teensy_hat_firmware).
 
-There's a lot of Donkey Car related stuff there, and just for my purposes I copied and pasted some of it and made it work for me.
+There's a lot of Donkey Car related stuff there, and just for my purposes I copied and pasted some of their code and made it work for me.
 
 ### Implementation and features
 
