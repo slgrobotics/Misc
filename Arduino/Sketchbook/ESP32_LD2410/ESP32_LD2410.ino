@@ -1,18 +1,19 @@
 /*
 
-  Based on https://github.com/ginkel/LD2412 
+  Based on https://github.com/iavorvel/MyLD2410 "sensor_data" example
 
   Compile for ESP32 Devkitc V4 -- Arduino IDE choose "DOIT ESP32 DEVKIT V1"
   Install "MyLD2410" library - using Library Manager or manually
   
-  Opens LD2412, prints (distances wrong):
+  Opens LD2410B, prints:
 
-  Both moving and stationary, distance: 597cm
-  MOVING    = 100@150cm 
-  STATIONARY= 100@150cm 
-
-  Stationary only, distance: 85cm
-  STATIONARY= 100@150cm 
+    Both moving and stationary, distance: 64cm
+     MOVING    = 91@69cm 
+     signals->[ 51 91 35 88 68 16 6 12 7 ] thresholds:[ 50 50 40 30 20 15 15 15 15 ]
+     STATIONARY= 100@69cm 
+     signals->[ 0 0 100 100 100 100 100 55 26 ] thresholds:[ 0 0 40 40 30 30 20 20 20 ]
+    Light level: 105
+    Output level: HIGH
 
  =================================   
   
@@ -43,8 +44,8 @@
   Provide sufficient power to the sensor Vcc (200mA, 5-12V) 
 */
 #if defined(ARDUINO_SAMD_NANO_33_IOT) || defined(ARDUINO_AVR_LEONARDO)
-//ARDUINO_SAMD_NANO_33_IOT RX_PIN is D1, TX_PIN is D0 
-//ARDUINO_AVR_LEONARDO RX_PIN(RXI) is D0, TX_PIN(TXO) is D1 
+//ARDUINO_SAMD_NANO_33_IOT RX_PIN is D1, TX_PIN is D0
+//ARDUINO_AVR_LEONARDO RX_PIN(RXI) is D0, TX_PIN(TXO) is D1
 #define sensorSerial Serial1
 #elif defined(ARDUINO_XIAO_ESP32C3) || defined(ARDUINO_XIAO_ESP32C6)
 //RX_PIN is D7, TX_PIN is D6
@@ -64,13 +65,13 @@
 #endif
 
 // User defines
-//#define DEBUG_MODE
-//#define ENHANCED_MODE
+// #define DEBUG_MODE
+#define ENHANCED_MODE
 #define SERIAL_BAUD_RATE 115200
 
 //Change the communication baud rate here, if necessary
 #include "MyLD2410.h"
-#define LD2410_BAUD_RATE 115200
+//#define LD2410_BAUD_RATE 256000
 
 #ifdef DEBUG_MODE
 MyLD2410 sensor(sensorSerial, true);
@@ -93,7 +94,11 @@ void printData() {
     Serial.print("cm");
   }
   Serial.println();
+
   if (sensor.movingTargetDetected()) {
+
+    digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+    
     Serial.print(" MOVING    = ");
     Serial.print(sensor.movingTargetSignal());
     Serial.print("@");
@@ -107,7 +112,10 @@ void printData() {
       Serial.print(" ]");
     }
     Serial.println();
+  } else {
+    digitalWrite(LED_BUILTIN, LOW);   // turn the LED off
   }
+
   if (sensor.stationaryTargetDetected()) {
     Serial.print(" STATIONARY= ");
     Serial.print(sensor.stationaryTargetSignal());
@@ -123,35 +131,28 @@ void printData() {
     }
     Serial.println();
   }
-  byte lightLevel = sensor.getLightLevel();
-  if (lightLevel) {
+
+  if (sensor.inEnhancedMode() && (sensor.getFirmwareMajor() > 1)) { 
     Serial.print("Light level: ");
-    Serial.println(lightLevel);
+    Serial.println(sensor.getLightLevel());
+    Serial.print("Output level: ");
+    Serial.println((sensor.getOutLevel()) ? "HIGH" : "LOW");
+    
+    //digitalWrite(LED_BUILTIN, (sensor.getOutLevel()) ? HIGH : LOW);   // turn the LED on (HIGH is the voltage level)
   }
+
   Serial.println();
 }
 
 void setup() {
   Serial.begin(SERIAL_BAUD_RATE);
-
-  delay(1000);
-  Serial.println(__FILE__);
-
 #if defined(ARDUINO_XIAO_ESP32C3) || defined(ARDUINO_XIAO_ESP32C6) || defined(ARDUINO_SAMD_NANO_33_IOT) || defined(ARDUINO_AVR_LEONARDO)
   sensorSerial.begin(LD2410_BAUD_RATE);
 #else
-  Serial.print("Opening sensorSerial: ");
-  Serial.println(LD2410_BAUD_RATE);
   sensorSerial.begin(LD2410_BAUD_RATE, SERIAL_8N1, RX_PIN, TX_PIN);
 #endif
   delay(2000);
   Serial.println(__FILE__);
-
-  Serial.print("RX_PIN=");
-  Serial.println(RX_PIN);
-  Serial.print("TX_PIN=");
-  Serial.println(TX_PIN);
-
   if (!sensor.begin()) {
     Serial.println("Failed to communicate with the sensor.");
     while (true) {}
@@ -162,6 +163,8 @@ void setup() {
 #else
   sensor.enhancedMode(false);
 #endif
+
+  pinMode(LED_BUILTIN, OUTPUT); // Pin 2
 
   delay(nextPrint);
 }
