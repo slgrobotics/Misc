@@ -1,10 +1,13 @@
-#define TRACE
+//#define TRACE
 //#define USE_EMA
+//#define USE_PIDS
+//#define HAS_ENCODERS
 
 // See https://github.com/slgrobotics/robots_bringup
 
+#ifdef USE_PIDS
 #include <PID_v1.h>
-//#include <PID_v1_bc.h>
+#endif // USE_PIDS
 
 //
 // As of 2025-11-01 this code is deployed on Seggy robot and works with its joystick and ROS2 Jazzy
@@ -22,9 +25,15 @@ const int ledPin = LED_BUILTIN;
 const int AD_Xpin = A0;         // Joystick X pin
 const int AD_Ypin = A1;         // Joystick Y pin
 
+#define TRIM_X 7
+#define TRIM_Y -7
+
+#define DEADZONE_JS 0.0
+
 // Servo pins:
 #define PIN_STEER 14
 #define PIN_THROTTLE 15
+#define PIN_EXTRA 11
 
 // diagnostic LEDs:
 const int redLedPin = 16;
@@ -38,26 +47,30 @@ const int batteryVoltageInPin = A2;  // Analog input pin that the battery 1/3 di
 //const int batteryCurrentInPin = A3;  // Analog input pin that the current sensor is attached to.
 
 const int mydt = 5;           // 5 milliseconds make for 200 Hz operating cycle
-const int pidLoopFactor = 20; // factor of 20 make for 100ms PID cycle
+const int controlLoopFactor = 20; // factor of 20 make for 100 ms Control (PID) cycle
 
 //-------------------------------------- Variable definitions --------------------------------------------- //
 
+#ifdef HAS_ENCODERS
 // 64-bit integers to avoid overflow
 volatile long long Ldistance, Rdistance;   // encoders - distance traveled, in ticks
 long long LdistancePrev = 0;   // last encoders values - distance traveled, in ticks
 long long RdistancePrev = 0;
-
-double pwm_R, pwm_L;    // pwm -255..255 accumulated here and ultimately sent to H-Bridge pins (will be constrained by set_motor())
-double dpwm_R, dpwm_L;  // correction output, calculated by PID, constrained -250..250 normally, will be added to the above
-
-int angle_steer{0};
-int angle_throttle{0};
 
 double speedMeasured_R = 0;  // percent of max speed for this drive configuration.
 double speedMeasured_L = 0;
 
 long distR; // ticks per 100ms cycle, as measured
 long distL;
+#endif // HAS_ENCODERS
+
+double pwm_R, pwm_L;    // pwm -255..255 accumulated here and ultimately sent to motor (H-Bridge or servos) pins (will be constrained by set_motor())
+#ifdef USE_PIDS
+double dpwm_R, dpwm_L;  // correction output, calculated by PID, constrained -250..250 normally, will be added to the above
+#endif // USE_PIDS
+
+int angle_steer{0};
+int angle_throttle{0};
 
 // desired speed can be set by joystick:
 // comes in the range -100...100 - it has a meaning of "percent of max speed":
@@ -65,15 +78,11 @@ double joystickSpeedR = 0.0;
 double joystickSpeedL = 0.0;
 
 // desired speed is set by Comm or Joystick.
-// comes in the range -100...100 - it has a meaning of "percent of max possible speed":
-// For Plucky full wheel rotation takes 3.8 seconds. So, with R_wheel = 0.192m max speed is:
-//   - 0.317 m/sec
-//   - 1.65 rad/sec
-//   - 660 encoder ticks/sec
+// comes in the range -100...100 - it has a meaning of "percent of max possible speed"
 double desiredSpeedR = 0.0;
 double desiredSpeedL = 0.0;
 
-// PID Setpoints (desired speed after ema):
+// PID Setpoints (desired speed after ema, -100...100 ):
 double setpointSpeedR = 0.0;
 double setpointSpeedL = 0.0;
 
@@ -83,14 +92,16 @@ const int LeftMotorChannel = 1;
 // EMA period to smooth wheels movement. 100 is smooth but fast, 300 is slow.
 const int EmaPeriod = 20;
 
-// Plucky robot physical parameters:
+// Robot physical parameters:
 double wheelBaseMeters = 0.600;
 double wheelRadiusMeters = 0.192;
-double encoderTicksPerRevolution = 2506; // now has 16T sprocket. Prior art - 47T sprocket: 853;  // one wheel rotation
+double encoderTicksPerRevolution = 2506; // one wheel rotation
 
+#ifdef USE_PIDS
 // higher Ki causes residual rotation, higher Kd - jerking movement
 PID myPID_R(&speedMeasured_R, &dpwm_R, &setpointSpeedR, 1.0, 0, 0.05, DIRECT);    // in, out, setpoint, double Kp, Ki, Kd, DIRECT or REVERSE
 PID myPID_L(&speedMeasured_L, &dpwm_L, &setpointSpeedL, 1.0, 0, 0.05, DIRECT);
+#endif // USE_PIDS
 
 bool testDir = false;
 
@@ -117,7 +128,8 @@ void setup()
 
   InitLeds();
 
-  int PID_SAMPLE_TIME = mydt * pidLoopFactor;  // milliseconds.
+#ifdef USE_PIDS
+  int PID_SAMPLE_TIME = mydt * controlLoopFactor;  // milliseconds.
 
   // turn the PID on and set its parameters:
   myPID_R.SetOutputLimits(-250.0, 250.0);  // match to maximum PID outputs in both directions. PID output will be added to PWM on each cycle.
@@ -127,12 +139,15 @@ void setup()
   myPID_L.SetOutputLimits(-250.0, 250.0);
   myPID_L.SetSampleTime(PID_SAMPLE_TIME);
   myPID_L.SetMode(AUTOMATIC);
+#endif // USE_PIDS
 
   // ======================== init motors and encoders: ===================================
 
   MotorsInit();
 
+#ifdef HAS_ENCODERS
   EncodersInit();    // Initialize the encoders - attach interrupts
+#endif // HAS_ENCODERS
 
   setEmaPeriod(RightMotorChannel, EmaPeriod);
   setEmaPeriod(LeftMotorChannel, EmaPeriod);
@@ -156,25 +171,45 @@ int printLoopCnt = 0;
 void loop() //Main Loop
 {
   /*
-    // test - direct motor PWM control:
+  // Test and adjust joystick:
+  int xx = analogRead(AD_Xpin) + TRIM_X;
+  int yy = analogRead(AD_Ypin) + TRIM_Y;
+  double jx = joystickX();
+  double jy = joystickY();
+  Serial.print(" X: ");
+  Serial.print(xx);
+  Serial.print(" / ");
+  Serial.print(jx);
+  Serial.print("      Y: ");
+  Serial.print(yy);
+  Serial.print(" / ");
+  Serial.print(jy);
+  Serial.print("      active: ");
+  Serial.print(isJoystickActive());
+  Serial.print("  pressed: ");
+  Serial.println(isJoystickPressed());
 
-    digitalWrite(RDIR, testDir ? LOW : HIGH);
-    analogWrite(RPWM, 200);
+  computeJoystickSpeeds();
 
-    digitalWrite(LDIR, testDir ? HIGH : LOW);
-    analogWrite(LPWM, 200);
+  // Test servos:
+  pwm_R = map(joystickSpeedR, -100, 100, -255, 255);
+  pwm_L = map(joystickSpeedL, -100, 100, -255, 255);
 
-    // test - motor PWM control via set_motors():
-    //  pwm_R = 255;
-    //  pwm_L = 255;
-    //  set_motors();
+  Serial.print("PWM: R: ");
+  Serial.print(pwm_R);
+  Serial.print("   L: ");
+  Serial.println(pwm_L);
 
-    printAll();
-    delay(3000);
-    testDir = !testDir;
-    return;
+  //constrainPwm();
+
+  //pwmToAngles();
+
+  set_motors();
+
+  delay(100);
+  return;
   */
-
+  
   //delay(1); // 1 ms
 
   // whole loop takes slightly over 3ms, with a bit less than 2ms left to idle
@@ -192,7 +227,7 @@ void loop() //Main Loop
   timer_old = timer;
   timer = micros();
 
-  boolean isPidLoop = loopCnt % pidLoopFactor == 0;
+  boolean isControlLoop = loopCnt % controlLoopFactor == 0;
 
 #ifdef TRACE
   boolean isPrintLoop = printLoopCnt++ >= printLoopFactor;
@@ -222,7 +257,7 @@ void loop() //Main Loop
   //desiredSpeedR = 20;
   //desiredSpeedL = 20;
 
-  if (isControlByJoystick())
+  if (isJoystickActive())
   {
     // ignore Comm values and override by joystick on A0 and A1:
 
@@ -247,17 +282,26 @@ void loop() //Main Loop
   setpointSpeedL = desiredSpeedL;
 #endif // USE_EMA
 
+#ifdef USE_PIDS
   // compute control inputs - increments to current PWM
   myPID_R.Compute();
   myPID_L.Compute();
+#endif // USE_PIDS
 
-  if (isPidLoop) // we do speed PID calculation on a slower scale, about 20Hz
+  if (isControlLoop) // we do speed PID calculation on a slower scale, about 10Hz
   {
+#ifdef HAS_ENCODERS
     // based on PWM increments, calculate speed:
     speed_calculate();
+#endif // HAS_ENCODERS
 
+#ifdef USE_PIDS
     // Calculate the pwm, given the desired speed (pick up values computed by PIDs):
     pwm_calculate();
+#else // USE_PIDS
+    pwm_R = constrain(map(setpointSpeedR, -100, 100, -255, 255), -255.0, 255.0);
+    pwm_L = constrain(map(setpointSpeedL, -100, 100, -255, 255), -255.0, 255.0);
+#endif // USE_PIDS
 
     // if(abs(pwm_R) > 250 || abs(desiredSpeedR - speedMeasured_R) > 3) {
     //   Serial.print(speedMeasured_R);
@@ -268,19 +312,19 @@ void loop() //Main Loop
     // test: At both motors set to +80 expect Ldistance and Rdistance to increase
     //pwm_R = 80.0;
     //pwm_L = 80.0;
-    //if(!isControlByJoystick()) {
+    //if(!isJoystickActive()) {
     //  pwm_L = 255.0;  // measure full speed distR and distL. See SpeedControl tab.
     //  pwm_R = 255.0;
     //}
 
     set_motors();
 
-    //digitalWrite(redLedPin, millis() - lastCommMs > 1000 ? HIGH : LOW);
-    //digitalWrite(whiteLedPin, millis() - lastMotorCommandMs > 1000 ? HIGH : LOW);
+    digitalWrite(redLedPin, millis() - lastCommMs > 1000 ? HIGH : LOW);
+    digitalWrite(whiteLedPin, millis() - lastMotorCommandMs > 1000 ? HIGH : LOW);
     //digitalWrite(blueLedPin, millis() - lastSonarMs > 1000 ? HIGH : LOW);
 
-    //digitalWrite(greenLedPin, !digitalRead(greenLedPin)); // blinking at 10 Hz
-    //digitalWrite(ledPin,!digitalReadFast(ledPin));
+    digitalWrite(greenLedPin, !digitalRead(greenLedPin)); // blinking at 10 Hz
+    digitalWrite(ledPin,!digitalRead(ledPin));
   }
 
   // we are done in about 3.4ms

@@ -1,5 +1,7 @@
 /*-------------Encoder---------------*/
 
+#ifdef HAS_ENCODERS
+
 // interrupts:
 // Most Arduino boards have two external interrupts: number 0 (on digital pin 2) and 1 (on digital pin 3)
 
@@ -76,3 +78,5 @@ void rightEncoder()
     Rdistance++;                // wheel moves forward, positive increase
   }
 }
+
+#endif // HAS_ENCODERS

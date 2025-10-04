@@ -48,18 +48,21 @@ void printAll()
   {
     lastPrintMillis = millis();
 
+#ifdef HAS_ENCODERS
     double Ldur = (double)Ldistance;
     double Rdur = (double)Rdistance;
+#endif // HAS_ENCODERS
 
     Serial.print("-------------------- ");
     Serial.print((loopCnt - lastLoopCnt) / (PRINT_INTERVAL_MS / 1000));
     Serial.println(" loops/sec");
 
-    Serial.print("Desired speed %:   Right: ");
+    Serial.print("Speed setpoints %:   Right: ");
     Serial.print(setpointSpeedR);
     Serial.print("       Left: ");
     Serial.println(setpointSpeedL);
 
+#ifdef HAS_ENCODERS
     Serial.print("Encoders:  Right Rdistance: ");
     Serial.print(Rdur);
     Serial.print("       Left Ldistance: ");
@@ -69,23 +72,26 @@ void printAll()
     Serial.print(speedMeasured_R);
     Serial.print("       Left: ");
     Serial.println(speedMeasured_L);
+#endif // HAS_ENCODERS
 
+#ifdef USE_PIDS
     Serial.print("PID:   Right dpwm_R: ");
     Serial.print(dpwm_R);
     Serial.print("       Left dpwm_L: ");
     Serial.println(dpwm_L);
+#endif // USE_PIDS
 
     Serial.print("Motors:   pwm_R: ");
     Serial.print(pwm_R);
     Serial.print("  pwm_L: ");
     Serial.print(pwm_L);
-    Serial.print("       angle_steer: ");
-    Serial.println(angle_steer);
-    Serial.print("  angle_throttle: ");
+    Serial.print("       angles: steer: ");
+    Serial.print(angle_steer);
+    Serial.print("  throttle: ");
     Serial.println(angle_throttle);
 
-    Serial.print("Joystick:   in control: ");
-    Serial.print(isControlByJoystick());
+    Serial.print("Joystick:   active: ");
+    Serial.print(isJoystickActive());
     Serial.print("  pressed: ");
     Serial.print(isJoystickPressed());
     Serial.print(" X: ");

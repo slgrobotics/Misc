@@ -1,10 +1,5 @@
 
-#define TRIM_X 0
-#define TRIM_Y 50
-
-#define DEADZONE_JS 8.0
-
-boolean isControlByJoystick()
+boolean isJoystickActive()
 {
   return !digitalRead(JOYSTICK_ACTIVATE_PIN);
 }
@@ -16,7 +11,7 @@ boolean isJoystickPressed()
 
 double joystickX()
 {
-  double jx = map((double)analogRead(AD_Xpin) + TRIM_X, 0.0, 1023.0, -100.0, 100.0);
+  double jx = constrain(map((double)analogRead(AD_Xpin) + TRIM_X, 4.0, 1020.0, -100.0, 100.0), -100.0, 100.0);
 
   if (abs(jx) < DEADZONE_JS) // deadzone
     jx = 0.0;
@@ -26,7 +21,7 @@ double joystickX()
 
 double joystickY()
 {
-  double jy = map((double)analogRead(AD_Ypin) + TRIM_Y, 27.0, 1023.0, -100.0, 95.0) + 5.0;
+  double jy = constrain(map((double)analogRead(AD_Ypin) + TRIM_Y, 4.0, 1020.0, -100.0, 100.0), -100.0, 100.0);
 
   if (abs(jy) < DEADZONE_JS) // deadzone
     jy = 0.0;

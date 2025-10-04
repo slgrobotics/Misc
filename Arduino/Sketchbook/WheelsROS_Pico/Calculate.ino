@@ -2,6 +2,7 @@
 // speed control is based on measuring ticks per cycle (say, 100ms), scaling to 100% and feeding it to PID which has a setting of 0...100 also in %
 // for a drive configuration (particular robot) we need to measure ticks per cycle when on full power and wheels in the air.
 
+#ifdef HAS_ENCODERS
 void speed_calculate()
 {
   distR = Rdistance - RdistancePrev; // Plucky robot: ~80 with 10Hz cycle, at full power (pwm=255) and wheels in the air
@@ -19,10 +20,12 @@ void speed_calculate()
   RdistancePrev = Rdistance;
   LdistancePrev = Ldistance;
 }
+#endif // HAS_ENCODERS
 
 // **********************************************
 // Calculate the pwm, given the desired speed
 // **********************************************
+#ifdef USE_PIDS
 void pwm_calculate()
 {
   // pick up values computed by PIDs. We must do it in float:
@@ -32,9 +35,8 @@ void pwm_calculate()
   // do not allow float values to grow beyond motor maximums:
   pwm_R = constrain(pwm_R, -255.0, 255.0);     // Maximum / Minimum Limitations
   pwm_L = constrain(pwm_L, -255.0, 255.0);
-
-  // we also let set_motor() constrain local integer ipwm_L and ipwm_R to -255...255
 }
+#endif // USE_PIDS
 
 // ------------------------------------------------------------------------------------------------------
 
