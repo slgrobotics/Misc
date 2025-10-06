@@ -25,8 +25,8 @@ const int ledPin = LED_BUILTIN;
 const int AD_Xpin = A0;         // Joystick X pin
 const int AD_Ypin = A1;         // Joystick Y pin
 
-#define TRIM_X 7
-#define TRIM_Y -7
+#define JOYSTICK_TRIM_X 7
+#define JOYSTICK_TRIM_Y -7
 
 #define DEADZONE_JS 0.0
 
@@ -172,8 +172,8 @@ void loop() //Main Loop
 {
   /*
   // Test and adjust joystick:
-  int xx = analogRead(AD_Xpin) + TRIM_X;
-  int yy = analogRead(AD_Ypin) + TRIM_Y;
+  int xx = analogRead(AD_Xpin) + JOYSTICK_TRIM_X;
+  int yy = analogRead(AD_Ypin) + JOYSTICK_TRIM_Y;
   double jx = joystickX();
   double jy = joystickY();
   Serial.print(" X: ");

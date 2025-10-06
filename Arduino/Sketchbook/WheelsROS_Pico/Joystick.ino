@@ -11,7 +11,7 @@ boolean isJoystickPressed()
 
 double joystickX()
 {
-  double jx = constrain(map((double)analogRead(AD_Xpin) + TRIM_X, 4.0, 1020.0, -100.0, 100.0), -100.0, 100.0);
+  double jx = constrain(map((double)analogRead(AD_Xpin) + JOYSTICK_TRIM_X, 4.0, 1020.0, -100.0, 100.0), -100.0, 100.0);
 
   if (abs(jx) < DEADZONE_JS) // deadzone
     jx = 0.0;
@@ -21,7 +21,7 @@ double joystickX()
 
 double joystickY()
 {
-  double jy = constrain(map((double)analogRead(AD_Ypin) + TRIM_Y, 4.0, 1020.0, -100.0, 100.0), -100.0, 100.0);
+  double jy = constrain(map((double)analogRead(AD_Ypin) + JOYSTICK_TRIM_Y, 4.0, 1020.0, -100.0, 100.0), -100.0, 100.0);
 
   if (abs(jy) < DEADZONE_JS) // deadzone
     jy = 0.0;
