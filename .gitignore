@@ -1,3 +1,4 @@
 
 *.bak
 /Arduino/Sketchbook/libraries
+/Arduino/Sketchbook_old
