@@ -1,5 +1,13 @@
 // **************************
 // Remote control code
+//
+// Implements simple strings-based protocol between the ROS2 diffdrive_arduino package (ros2_control interfaces) and RPi Pico
+//
+// See https://github.com/slgrobotics/diffdrive_arduino
+//
+// Credits: Original code by Articulated Robotics (Josh Newans):
+// https://articulatedrobotics.xyz/category/build-a-mobile-robot-with-ros
+// 
 // **************************
 
 //#define ARTICUBOTS_USE_SERVOS
@@ -11,7 +19,7 @@
 
 void InitSerial() {
 
-  COMM_SERIAL.begin(BAUDRATE_ARTICUBOTS);   // start serial for USB to Raspberry Pi
+  COMM_SERIAL.begin(BAUDRATE_ARTICUBOTS);   // start serial for USB to Raspberry Pi /dev/ttyACM0
   //COMM_SERIAL.setTimeout(1);
 }
 
@@ -71,7 +79,7 @@ void respond_ERROR(String rq_cmd_in) {
 }
 
 void readCommCommand() {
-  unsigned long now = millis();
+
   if (COMM_SERIAL.available()) {
     String strs[20];
     int StringCount = 0;
@@ -199,16 +207,20 @@ void runCommand() {
       sprintf(&out_buf[2], "%d %d %d %d\r", 0, 0, 0, 0);
       respond();
       break;
-#ifdef ARTICUBOTS_USE_SERVOS
     case SERVO_WRITE:
+#ifdef ARTICUBOTS_USE_SERVOS
       servos[arg1].setTargetPosition(arg2);
+#endif // ARTICUBOTS_USE_SERVOS
       respond_OK(cmd);
       break;
     case SERVO_READ:
+#ifdef ARTICUBOTS_USE_SERVOS
       sprintf(&out_buf[2], "%d\r", servos[arg1].getServo().read());
+#else  // ARTICUBOTS_USE_SERVOS
+      sprintf(&out_buf[2], "%d\r", 0);
+#endif  // ARTICUBOTS_USE_SERVOS
       respond();
       break;
-#endif  // ARTICUBOTS_USE_SERVOS
 
 #ifdef ARTICUBOTS_USE_BASE
     case READ_ENCODERS:
