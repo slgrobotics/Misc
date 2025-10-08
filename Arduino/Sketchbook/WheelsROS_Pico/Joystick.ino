@@ -35,7 +35,7 @@ const int OUT_SHIFT = 0;
 
 void computeJoystickSpeeds()
 {
-  // see RC_ArcadeMixer.ino
+  // see https://github.com/slgrobotics/Misc/blob/master/Arduino/Sketchbook/RC_ArcadeMixer/RC_ArcadeMixer.ino
 
   double leftMix;
   double rightMix;

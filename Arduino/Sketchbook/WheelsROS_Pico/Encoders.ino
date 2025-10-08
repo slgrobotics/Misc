@@ -2,6 +2,17 @@
 
 #ifdef HAS_ENCODERS
 
+// Note: Seggy robot does not have encoders.
+
+// TODO: Using encoders on RPi Pico:
+// https://github.com/raspberrypi/pico-examples/blob/master/pio/quadrature_encoder/quadrature_encoder.c
+// https://forums.raspberrypi.com/viewtopic.php?t=340988
+// https://github.com/jamon/pi-pico-pio-quadrature-encoder/blob/main/README.md
+// https://www.upesy.com/blogs/tutorials/rotary-encoder-raspberry-pi-pico-with-arduino-code
+// https://core-electronics.com.au/guides/getting-started-with-rotary-encoders-examples-with-raspberry-pi-pico/
+
+// old code from Mega 2560 below for reference:
+
 // interrupts:
 // Most Arduino boards have two external interrupts: number 0 (on digital pin 2) and 1 (on digital pin 3)
 

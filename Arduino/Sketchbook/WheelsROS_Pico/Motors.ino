@@ -1,12 +1,21 @@
 
+#ifdef USE_SERVOS
+
 #include <Servo.h>
 
+//
 // see https://github.com/slgrobotics/robots_bringup/tree/main/Docs/miniPRO
+//
+// Seggy ("Smart Table" robot is based on Segway Ninebot miniPRO and is controlled by 
+//  "knee bar" (steer) and "tilt" (throttle) servos.
+//  The "Extra" servos press on footpad buttons, enabling "beast" mode
+//
 
 Servo servo_Steer;      // create servo object to control a servo
 Servo servo_Throttle;
 Servo servo_Extra;
 
+// Values adjusted for Seggy:
 const int steer_neutral = 85; // degrees
 const int steer_throw = 50;
 
@@ -45,6 +54,7 @@ void pwmToAngles()
   int pwm_steer = (pwm_L - pwm_R) / 2;
   int pwm_throttle = (pwm_L + pwm_R) / 2;
 
+  // make sure we can steer even with full throttle:
   int max_pwm = abs(pwm_throttle) + abs(pwm_steer);
 
   if(max_pwm > 255) {
@@ -82,3 +92,13 @@ void set_motors()
   servo_Throttle.write(angle_throttle);
   servo_Extra.write(isJoystickPressed() ? extra_on : extra_off);
 }
+
+#else // USE_SERVOS
+
+// For IBT-2 code or other PWM/H-Bridge driven compatible examples see:
+//
+//  https://github.com/slgrobotics/Misc/blob/master/Arduino/Sketchbook/DraggerROS/DraggerMotors.ino
+//  https://github.com/slgrobotics/Misc/blob/master/Arduino/Sketchbook/PluckyWheelsROS/PluckyMotors.ino
+//     
+
+#endif // USE_SERVOS

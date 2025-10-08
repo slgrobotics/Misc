@@ -2,6 +2,7 @@
 //#define USE_EMA
 //#define USE_PIDS
 //#define HAS_ENCODERS
+#define USE_SERVOS
 
 // See https://github.com/slgrobotics/robots_bringup
 
@@ -10,11 +11,25 @@
 #endif // USE_PIDS
 
 //
-// As of 2025-11-01 this code is deployed on Seggy robot and works with its joystick and ROS2 Jazzy
+// This code is an adaptation of Dragger and Plucky robots code, which runs on Mega 2560
+// The "Comm" part complies with articubot_one and can be used with ROS2 interchangibly.
+//
+// As of 2025-10-08 this code is deployed on Seggy robot and works with its joystick and ROS2 Jazzy
 //
 // See https://github.com/slgrobotics/robots_bringup/tree/main/Docs
+//     https://github.com/slgrobotics/Misc/blob/master/Arduino/Sketchbook/DraggerROS
+//     https://github.com/slgrobotics/Misc/blob/master/Arduino/Sketchbook/PluckyWheelsROS
 //
 // Sergei Grichine - slg@quakemap.com
+//
+// Note: using Arduino IDE 1.8.19 (snap installed) + Raspberry Pi Pico on Ubunti 24.04
+//
+// The IDE does not automatically upload the compiled ".uf2" file to Pico.
+//
+// look for something like "WheelsROS_Pico.ino.uf2" in:
+//             admin:///tmp/snap-private-tmp/snap.arduino/tmp/arduino_build_NNNNN
+//
+// drag it to "usb drive", appearing when Pico is powered up with "boot" button pressed.
 //
 
 const int ledPin = LED_BUILTIN;
@@ -30,10 +45,12 @@ const int AD_Ypin = A1;         // Joystick Y pin
 
 #define DEADZONE_JS 0.0
 
+#ifdef USE_SERVOS
 // Servo pins:
 #define PIN_STEER 14
 #define PIN_THROTTLE 15
 #define PIN_EXTRA 11
+#endif // USE_SERVOS
 
 // diagnostic LEDs:
 const int redLedPin = 16;
