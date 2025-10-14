@@ -64,8 +64,8 @@ void setup() {
   // use monitoring with serial
   Serial.begin(115200);
   // enable more verbose output for debugging
-  // comment out if not needed
-  //SimpleFOCDebug::enable(&Serial);
+  // comment out if not needed. See https://docs.simplefoc.com/debugging
+  SimpleFOCDebug::enable(&Serial);
 
   // initialize HALL sensor hardware
   sensor.init(); // void sub
@@ -83,7 +83,7 @@ void setup() {
   driver.voltage_limit = DRIVER_VOLTAGE_LIMIT;
 
   if (!driver.init()) {
-    Serial.println("Driver init failed!");
+    SIMPLEFOC_DEBUG("Driver init failed!");
     return;
   }
 
@@ -121,17 +121,17 @@ void setup() {
   // comment out if not needed
   //motor.useMonitoring(Serial);
 
-  Serial.println("IP: initializing motor and FOC...");
+  SIMPLEFOC_DEBUG("IP: initializing motor and FOC...");
 
   // initialize motor
   if (!motor.init()) {
-    Serial.println("Motor init failed!");
+    SIMPLEFOC_DEBUG("Motor init failed!");
     return;
   }
 
   // align sensor and start FOC
   if (!motor.initFOC()) {
-    Serial.println("FOC init failed!");
+    SIMPLEFOC_DEBUG("FOC init failed!");
     return;
   }
 
