@@ -11,12 +11,14 @@
 
 // miniPRO wheels are very low resistance, "1" is fine:
 #define DRIVER_VOLTAGE_LIMIT 2
-#define DRIVER_VOLTAGE 12
+#define POWER_SUPPLY_VOLTAGE 12
+#define POLE_PAIRS 15
 
 // BLDC motor & driver instances:
 // BLDCMotor motor = BLDCMotor(pole pair number - 15 for miniPRO wheels with 30 magnets, 27 coils);
-BLDCMotor motorL = BLDCMotor(15);
-BLDCMotor motorR = BLDCMotor(15);
+BLDCMotor motorL = BLDCMotor(POLE_PAIRS);
+BLDCMotor motorR = BLDCMotor(POLE_PAIRS);
+
 // BLDCDriver3PWM driver = BLDCDriver3PWM(pwmA, pwmB, pwmC, Enable(optional));
 BLDCDriver3PWM driverL = BLDCDriver3PWM(9, 10, 11, 8);
 BLDCDriver3PWM driverR = BLDCDriver3PWM(3, 5, 6, 7);
@@ -42,7 +44,7 @@ void setup() {
   SimpleFOCDebug::enable(&Serial);
 
   // driver config - power supply voltage [V]
-  driverL.voltage_power_supply = driverR.voltage_power_supply = DRIVER_VOLTAGE;
+  driverL.voltage_power_supply = driverR.voltage_power_supply = POWER_SUPPLY_VOLTAGE;
 
   // limit the maximum dc voltage the driver can set
   // as a protection measure for the low-resistance motors
