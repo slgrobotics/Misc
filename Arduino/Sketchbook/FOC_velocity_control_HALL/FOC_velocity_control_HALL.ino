@@ -95,21 +95,24 @@ void setup() {
   // set aligning voltage [Volts]:
   motor.voltage_sensor_align = MOTOR_VOLTAGE_ALIGN;
   // index search velocity [rad/s]
-  motor.velocity_index_search = 3;
+  //motor.velocity_index_search = 3;
 
   // set motion control loop to be used
+  //motor.controller = MotionControlType::torque;
   motor.controller = MotionControlType::velocity;
 
   // contoller configuration
   // default parameters in defaults.h
 
   // velocity PID controller parameters
-  motor.PID_velocity.P = 0.2f;
-  motor.PID_velocity.I = 2;
+  motor.PID_velocity.P = 1.0f; // 0.2f;
+  motor.PID_velocity.I = 0; //2;
   motor.PID_velocity.D = 0;
 
   // initial motor voltage limit
   motor.voltage_limit = DRIVER_VOLTAGE_LIMIT;
+  //motor.current_limit = 10;
+  //motor.velocity_limit = 20;
 
   // jerk control using voltage voltage ramp
   // default value is 300 volts per sec  ~ 0.3V per millisecond
