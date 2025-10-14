@@ -12,7 +12,7 @@
 // miniPRO wheels are very low resistance, "1" is fine:
 #define DRIVER_VOLTAGE_LIMIT 2
 #define POWER_SUPPLY_VOLTAGE 12
-#define MOTOR_VOLTAGE_ALIGN 1
+#define MOTOR_VOLTAGE_ALIGN 0.5
 #define POLE_PAIRS 15
 
 // BLDC motor & driver instances:
@@ -46,7 +46,7 @@ void setup() {
   // use monitoring with serial 
   Serial.begin(115200);
   // enable more verbose output for debugging
-  // comment out if not needed
+  // comment out if not needed. See https://docs.simplefoc.com/debugging
   SimpleFOCDebug::enable(&Serial);
 
   // driver config - power supply voltage [V]
@@ -57,7 +57,7 @@ void setup() {
   // this value is fixed on startup
   driverL.voltage_limit = driverR.voltage_limit = DRIVER_VOLTAGE_LIMIT;
   if(!driverL.init() || !driverR.init()){
-    Serial.println("Driver init failed!");
+    Serial.println("Error: Drivers init failed!");
     return;
   }
 
@@ -65,7 +65,9 @@ void setup() {
   motorL.linkDriver(&driverL);
   motorR.linkDriver(&driverR);
 
-  // aligning voltage [V]
+  // During the sensor align procedure, SimpleFOC moves the wheels and measures
+  //     the direction of the sensor and the zero electrical angle offset.
+  // set aligning voltage [Volts]:
   motorL.voltage_sensor_align = motorR.voltage_sensor_align = MOTOR_VOLTAGE_ALIGN;
 
   // Link sensors to motors:
@@ -92,20 +94,22 @@ void setup() {
 
   // init motor hardware
   if(!motorL.init() || !motorR.init()){
-    Serial.println("Motors init failed!");
+    Serial.println("Error: Motors init failed!");
     return;
   }
 
-  motorL.initFOC();
-  motorR.initFOC();
+  if (!motorL.initFOC() || !motorR.initFOC()) {
+    Serial.println("Error: FOC init failed!");
+    return;
+  }
 
   // add target commands: L and R for velocity, V for voltage limit:
   command.add('L', doTargetL, "target velocity_L");
   command.add('R', doTargetR, "target velocity_R");
   command.add('V', doLimit, "voltage limit");
 
-  Serial.println("Motor ready!");
-  Serial.println("Set target velocity [rad/s]");
+  Serial.println("OK: Motor ready");
+  Serial.println("Set target velocity [rad/s] using commands R<x>, L<x> and Voltage limit using V<x>");
   _delay(1000);
 }
 
