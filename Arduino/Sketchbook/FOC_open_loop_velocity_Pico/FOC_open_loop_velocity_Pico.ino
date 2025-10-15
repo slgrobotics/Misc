@@ -12,6 +12,18 @@
 //             admin:///tmp/snap-private-tmp/snap.arduino/tmp/arduino_build_624141
 //
 
+/*
+Recommended groups for a 3PWM BLDC driver:
+Group 1:
+Phase A: GP8 (Slice 4, Channel A)
+Phase B: GP9 (Slice 4, Channel B)
+Phase C: GP10 (Slice 5, Channel A)
+Group 2:
+Phase A: GP6 (Slice 3, Channel A)
+Phase B: GP7 (Slice 3, Channel B)
+Phase C: GP8 (Slice 4, Channel A) 
+*/
+
 // miniPRO wheels are very low resistance, "1" is fine:
 #define DRIVER_VOLTAGE_LIMIT 2
 #define POWER_SUPPLY_VOLTAGE 12
@@ -25,8 +37,9 @@ BLDCMotor motor = BLDCMotor(POLE_PAIRS);
 // BLDCDriver3PWM driver = BLDCDriver3PWM(pwmA, pwmB, pwmC, Enable(optional));
 //BLDCDriver3PWM driver = BLDCDriver3PWM(6, 7, 8, 9); // GP6...9
 BLDCDriver3PWM driver = BLDCDriver3PWM(10, 11, 12, 13); // GP10...13
+//BLDCDriver3PWM driver = BLDCDriver3PWM(8, 9, 10, 7);
 
-//target variable
+// target variable
 float target_velocity = 0;
 
 // Commands over Serial (newline terminated): L1, T0, T0.5 T1, T2 ...
@@ -69,6 +82,7 @@ bool init_me()
   // as a protection measure for the low-resistance motors
   // this value is fixed on startup
   driver.voltage_limit = DRIVER_VOLTAGE_LIMIT; // miniPRO wheels are very low resistance, "1" is fine
+  //driver.pwm_frequency = 1000; // 1 kHz
 
   if (!driver.init()) {
     Serial.println("Error: Driver init failed!");
