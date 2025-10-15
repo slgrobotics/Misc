@@ -167,8 +167,12 @@ void loop() {
 
   ulong now = millis();
   if(now - last_print > 1000) {
-    Serial.print("Vel: ");
-    Serial.println(sensor.getVelocity());
+    float angle = sensor.getAngle();
+    float velocity = sensor.getVelocity();
+    Serial.print("Ang: ");
+    Serial.print(angle);
+    Serial.print("  Vel: ");
+    Serial.println(velocity);
     last_print = now;
   }
 
