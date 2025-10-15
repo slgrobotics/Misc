@@ -9,7 +9,10 @@
 // see https://photos.app.goo.gl/yHXs7fP7u7ae8fa78
 //
 // Compiled file - look for something like "myBlink.ino.uf2" in:
-//             admin:///tmp/snap-private-tmp/snap.arduino/tmp/arduino_build_624141
+//           1.8.19:  admin:///tmp/snap-private-tmp/snap.arduino/tmp/arduino_build_624141
+//           2.3.6:   /home/sergei/.cache/arduino/sketches/CDE341FACC5958BD1FA063FDB3D2894A
+//
+// Does not work as of Oct 15, 2025
 //
 
 /*
