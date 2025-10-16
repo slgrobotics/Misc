@@ -12,37 +12,39 @@
 #define MOTOR_VOLTAGE_ALIGN 2
 #define POLE_PAIRS 15
 
+#define RIGHT_WHEEL
+
 const float voltage_limit = 6.0;  // safe startup limit
 const float current_limit = 3.0;  // A, conservative
-
-// PWM pins (example for Teensy 4.0, adapt as wired)
-#define A_H 2
-#define B_H 3
-#define C_H 4
-#define A_L 5
-#define B_L 6
-#define C_L 9
-
-// Hall sensor pins (adapt to your wheel)
-#define HALL1 14
-#define HALL2 15
-#define HALL3 16
-// -----------------------------------
 
 //BLDCMotor motor(POLE_PAIRS);
 BLDCMotor motor = BLDCMotor(POLE_PAIRS);
 
 //BLDCDriver6PWM driver(A_H, B_H, C_H, A_L, B_L, C_L);
-BLDCDriver3PWM driver = BLDCDriver3PWM(9, 10, 11, 12);
+#ifdef RIGHT_WHEEL
+BLDCDriver3PWM driver = BLDCDriver3PWM(9, 10, 11, 13); // Right wheel. 13 is also BUILTIN_LED
+#else
+BLDCDriver3PWM driver = BLDCDriver3PWM(5, 6, 7, 8);    // Left wheel
+#endif // RIGHT_WHEEL
 
 //HallSensor sensor(HALL1, HALL2, HALL3, POLE_PAIRS);
-HallSensor sensor = HallSensor(14, 15, 16, POLE_PAIRS);
+#ifdef RIGHT_WHEEL
+HallSensor sensor = HallSensor(12, 15, 16, POLE_PAIRS); // Right wheel
+#else
+HallSensor sensor = HallSensor(2, 3, 4, POLE_PAIRS);    // Left wheel
+#endif // RIGHT_WHEEL
+
+// Note: A0 (14) and A9 (23) are left free for joystick
 
 // InlineCurrentSensor - https://docs.simplefoc.com/inline_current_sense
 //  - shunt_resistor  - shunt resistor value
 //  - gain  - current-sense op-amp gain
 //  Option: if measuring 2 out of 3 currents, put the flag _NC to the phase you are not using.
-InlineCurrentSense current_sense = InlineCurrentSense(0.005, 24, A3, A4, A5);
+#ifdef RIGHT_WHEEL
+InlineCurrentSense current_sense = InlineCurrentSense(0.005, 24, A3, A4, A5); // Right wheel
+#else
+InlineCurrentSense current_sense = InlineCurrentSense(0.005, 24, A6, A7, A8); // Left wheel
+#endif // RIGHT_WHEEL
 
 // -------- PID tuning values from last message --------
 void setupPID() {
