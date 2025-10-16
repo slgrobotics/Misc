@@ -12,7 +12,7 @@
 #define MOTOR_VOLTAGE_ALIGN 2
 #define POLE_PAIRS 15
 
-const float voltage_limit = 6.0; // safe startup limit
+const float voltage_limit = 6.0;  // safe startup limit
 const float current_limit = 3.0;  // A, conservative
 
 // PWM pins (example for Teensy 4.0, adapt as wired)
@@ -42,11 +42,10 @@ HallSensor sensor = HallSensor(14, 15, 16, POLE_PAIRS);
 //  - shunt_resistor  - shunt resistor value
 //  - gain  - current-sense op-amp gain
 //  Option: if measuring 2 out of 3 currents, put the flag _NC to the phase you are not using.
-InlineCurrentSense current_sense  = InlineCurrentSense(0.005, 24, A3, A4, A5);
+InlineCurrentSense current_sense = InlineCurrentSense(0.005, 24, A3, A4, A5);
 
 // -------- PID tuning values from last message --------
-void setupPID()
-{
+void setupPID() {
   // current q/d
   motor.PID_current_q.P = 1.00;
   motor.PID_current_q.I = 0.03;
@@ -57,9 +56,9 @@ void setupPID()
   motor.PID_current_d.D = 0.00;
 
   // velocity
-  motor.PID_velocity.P = 0.08;  // 0.60;
+  motor.PID_velocity.P = 0.08;   // 0.60;
   motor.PID_velocity.I = 0.75;   // 0.015;
-  motor.PID_velocity.D = 0.004; //0.0002;
+  motor.PID_velocity.D = 0.004;  //0.0002;
 
   // position (optional)
   // motor.P_angle.P = 18.0;
@@ -91,7 +90,8 @@ void setup() {
 
   // link current sense and driver
   current_sense.linkDriver(&driver);
-  if(!current_sense.init()) {; // also performs zero current offset
+  if (!current_sense.init()) {
+    // also performs zero current offset
     Serial.println("Error: current_sense.init() failed");
     return;
   }
@@ -118,15 +118,19 @@ void setup() {
 
   setupPID();
 
-  if(!motor.init()) {
+  if (!motor.init()) {
     Serial.println("Error: motor.init() failed");
     return;
   }
 
-  motor.linkCurrentSense(&current_sense);
+  // Comment out the following link for "standalone" current sensor configuration
+  // (sensing works for monitoring, but doesn't contribute to FOC):
+  //motor.linkCurrentSense(&current_sense);
 
-  if(!motor.initFOC()) {
+  // may take several tries, as current sensors are finicky:
+  if (!motor.initFOC()) {
     Serial.println("Error: motor.initFOC() failed");
+    _delay(2000);
     return;
   }
 
@@ -139,7 +143,7 @@ void setup() {
 
 void loop() {
 
-  if(!init_ok) {
+  if (!init_ok) {
     delay(1000);
     return;
   }
@@ -177,13 +181,13 @@ void loop() {
     lastPrint = millis();
 
     // https://docs.simplefoc.com/inline_current_sense#standalone-current-sense
-    PhaseCurrent_s  current_ph = current_sense.getPhaseCurrents();
+    PhaseCurrent_s current_ph = current_sense.getPhaseCurrents();
     float current_dc = current_sense.getDCCurrent();
 
     Serial.print("DC: ");
     Serial.print(current_dc);
     Serial.print(" A\tPhases:\t");
-    Serial.print(current_ph.a); // milli Amps
+    Serial.print(current_ph.a);  // milli Amps
     Serial.print("\t");
     Serial.print(current_ph.b);
     Serial.print("\t");
