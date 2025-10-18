@@ -21,6 +21,8 @@ const float current_limit = 3.0;  // A, conservative
 BLDCMotor motor = BLDCMotor(POLE_PAIRS);
 
 //BLDCDriver6PWM driver(A_H, B_H, C_H, A_L, B_L, C_L);
+// Note: For 6PWM action GP 24...31 are available
+
 #ifdef RIGHT_WHEEL
 BLDCDriver3PWM driver = BLDCDriver3PWM(9, 10, 11, 13); // Right wheel. 13 is also BUILTIN_LED
 #else
@@ -29,12 +31,12 @@ BLDCDriver3PWM driver = BLDCDriver3PWM(5, 6, 7, 8);    // Left wheel
 
 //HallSensor sensor(HALL1, HALL2, HALL3, POLE_PAIRS);
 #ifdef RIGHT_WHEEL
-HallSensor sensor = HallSensor(12, 15, 16, POLE_PAIRS); // Right wheel
+HallSensor sensor = HallSensor(12, 14, 15, POLE_PAIRS); // Right wheel
 #else
 HallSensor sensor = HallSensor(2, 3, 4, POLE_PAIRS);    // Left wheel
 #endif // RIGHT_WHEEL
 
-// Note: A0 (14) and A9 (23) are left free for joystick
+// Note: A2 (16) and A9 (23) are left free for joystick, as are A32 (Active) and A33 (Pressed)
 
 // InlineCurrentSensor - https://docs.simplefoc.com/inline_current_sense
 //  - shunt_resistor  - shunt resistor value
