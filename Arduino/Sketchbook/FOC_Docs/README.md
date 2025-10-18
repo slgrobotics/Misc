@@ -19,6 +19,6 @@ Similar boards available now:
 
 ### My projects (code here in Sketchbook):
 
-- Segway Ninebot miniPRO "Smart Table": https://photos.app.goo.gl/yHXs7fP7u7ae8fa78
+- Segway Ninebot [miniPRO](https://github.com/slgrobotics/robots_bringup/tree/main/Docs/miniPRO) "Smart Table": https://photos.app.goo.gl/yHXs7fP7u7ae8fa78
 - Hoverboard Hacking: https://photos.app.goo.gl/ARzmuvBMmabv8Dws8  (code [here](https://github.com/slgrobotics/Misc/tree/master/Arduino/Sketchbook/ESP8266BalancerVoyager))
 - ROS2 robots: https://github.com/slgrobotics/robots_bringup/tree/main
