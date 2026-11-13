@@ -61,7 +61,9 @@ The numbers are Teensy GPIO numbers. Analog aliases appear in parentheses.
 | Buzzer | 26 (A12) |
 | ROS 2 serial connection | USB |
 
-Reserve pin 13 for right motor driver enable. The firmware has no status LED assignment. Pins 25 (A11) and 27 (A13) are free in the sketch. Check the carrier board wiring before using either pin.
+Reserve pin 13 for right motor driver enable. The external status LED is disabled by default. To enable it on pin 27 (A13), check that the pin is free on the carrier board, then uncomment `#define STATUS_LED_PIN A13` in [WheelsROS_Seggy.ino](src/WheelsROS_Seggy.ino) and rebuild. Pin 25 (A11) is also unassigned in the sketch and can be used if it is free on the carrier board.
+
+When enabled, the LED blinks at about 5 Hz during normal operation and blinks slowly if motor initialization fails.
 
 ## Build and upload
 
