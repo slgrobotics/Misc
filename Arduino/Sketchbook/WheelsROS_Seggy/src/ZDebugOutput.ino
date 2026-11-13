@@ -2,27 +2,9 @@
 
 void InitLeds()
 {
-  pinMode (mainLedPin, OUTPUT);  // Status LED
-
-#ifdef HAS_LEDS
-  // diagnostic LEDs:
-  pinMode (redLedPin, OUTPUT);
-  pinMode (blueLedPin, OUTPUT);
-  pinMode (greenLedPin, OUTPUT);
-  pinMode (whiteLedPin, OUTPUT);
-#endif // HAS_LEDS
-
-  blinkLED(10, 50);
-
-  digitalWrite(mainLedPin, HIGH);
-
-  /*
-    digitalWrite(redLedPin, HIGH);
-    digitalWrite(yellowLedPin, HIGH);
-    digitalWrite(blueLedPin, HIGH);
-    digitalWrite(greenLedPin, HIGH);
-    digitalWrite(whiteLedPin, HIGH);
-  */
+#ifdef STATUS_LED_PIN
+  pinMode (STATUS_LED_PIN, OUTPUT);  // Status LED
+#endif
 }
 
 void buzz(int nTimes, int buzzDurationMs, int silenceDurationMs)
@@ -38,13 +20,17 @@ void buzz(int nTimes, int buzzDurationMs, int silenceDurationMs)
 
 void blinkLED(int nTimes, int halfPeriodMs)
 {
+#ifdef STATUS_LED_PIN
   for (int i = 0; i < nTimes; i++)
   {
-    digitalWrite(mainLedPin, HIGH);
+    digitalWrite(STATUS_LED_PIN, HIGH);
     delay(halfPeriodMs);
-    digitalWrite(mainLedPin, LOW);
+    digitalWrite(STATUS_LED_PIN, LOW);
     delay(halfPeriodMs);
   }
+#else
+    delay(halfPeriodMs * 2 * nTimes);
+#endif
 }
 
 #ifdef TRACE

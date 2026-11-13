@@ -1,5 +1,4 @@
 //#define TRACE
-//#define HAS_LEDS
 //#define USE_ARCADE_DRIVE
 
 // See https://github.com/slgrobotics/robots_bringup
@@ -39,15 +38,9 @@ const int batteryVoltageInPin = A10;  // Analog input pin that the battery 1/3 d
 
 #define BUZZER_PIN 26
 
-const int mainLedPin = LED_BUILTIN;
-
-#ifdef HAS_LEDS
-// additional diagnostic LEDs:
-const int redLedPin = 28;
-const int greenLedPin = 29;
-const int whiteLedPin = 30;
-const int blueLedPin = 31;
-#endif // HAS_LEDS
+// If you have any pins left, you can use them for a status LED. It will blink if the loop is running.
+// Do not use pin 13 (LED_BUILTIN), it is used by the right wheel driver. Teensy 4.0 has a built-in LED on pin 13, but it is not used here.
+//#define STATUS_LED_PIN A13
 
 const int mydt = 5;           // 5 milliseconds make for 200 Hz operating cycle
 const int controlLoopFactor = 20; // factor of 20 make for 100 ms Control cycle
@@ -235,16 +228,10 @@ void loop() //Main Loop
 
     set_motors(); // pass speedSetpointR/L to FOC
 
-#ifdef HAS_LEDS
-    digitalWrite(redLedPin, millis() - lastCommMs > 1000 ? HIGH : LOW);
-    digitalWrite(whiteLedPin, millis() - lastMotorCommandMs > 1000 ? HIGH : LOW);
-    //digitalWrite(blueLedPin, millis() - lastSonarMs > 1000 ? HIGH : LOW);
-
-    digitalWrite(greenLedPin, !digitalRead(greenLedPin)); // blinking at 10 Hz
-#endif // HAS_LEDS
-
+#ifdef STATUS_LED_PIN
     // Normal cycle blinking: 5 Hz
-    digitalWrite(mainLedPin,!digitalRead(mainLedPin));
+    digitalWrite(STATUS_LED_PIN, !digitalRead(STATUS_LED_PIN));
+#endif
   }
 
   // we are done in about 3.4ms

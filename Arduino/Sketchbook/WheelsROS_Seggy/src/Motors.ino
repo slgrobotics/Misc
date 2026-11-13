@@ -26,7 +26,7 @@ BLDCMotor motorR = BLDCMotor(POLE_PAIRS);
 // Note: For 6PWM action GP 26...31 are available, if not used for LEDs
 
 BLDCDriver3PWM driverL = BLDCDriver3PWM(5, 6, 7, 8);    // Left wheel
-BLDCDriver3PWM driverR = BLDCDriver3PWM(9, 10, 11, 13); // Right wheel. 13 is also BUILTIN_LED
+BLDCDriver3PWM driverR = BLDCDriver3PWM(9, 10, 11, 13); // Right wheel. Pin 13 also drives the onboard LED. Reserve it for driver enable.
 
 //HallSensor sensor(HALL1, HALL2, HALL3, POLE_PAIRS);
 //HallSensor sensorL = HallSensor(2, 3, 4, POLE_PAIRS);    // Left wheel
