@@ -14,7 +14,6 @@
 // **************************
 
 //#define ARTICUBOTS_USE_SERVOS
-#define ARTICUBOTS_USE_BASE
 
 #define COMM_SERIAL Serial
 #define BAUDRATE_ARTICUBOTS 115200
@@ -221,7 +220,6 @@ void runCommand() {
       respond();
       break;
 
-#ifdef ARTICUBOTS_USE_BASE
     case READ_ENCODERS: {
       noInterrupts();
       const long long left = Ldistance;
@@ -262,7 +260,6 @@ void runCommand() {
       // do nothing
       respond_OK(cmd);
       break;
-#endif  // ARTICUBOTS_USE_BASE
 
     default:
       respond_ERROR(cmd_in);
