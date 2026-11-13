@@ -71,7 +71,8 @@ void respond_OK(char rq_cmd) {
 }
 
 void respond_ERROR(String rq_cmd_in) {
-  sprintf(out_buf, "? Error: '%s'\r", rq_cmd_in);
+  constexpr int maxCommandLength = sizeof(out_buf) - sizeof("? Error: ''\r");
+  snprintf(out_buf, sizeof(out_buf), "? Error: '%.*s'\r", maxCommandLength, rq_cmd_in.c_str());
   respond();
 }
 
@@ -171,7 +172,7 @@ void runCommand() {
 
   switch (cmd) {
     case GET_BAUDRATE:
-      sprintf(&out_buf[2], "%ld\r", BAUDRATE_ARTICUBOTS);
+      sprintf(&out_buf[2], "%d\r", BAUDRATE_ARTICUBOTS);
       respond();
       break;
     case ANALOG_READ:
@@ -229,7 +230,7 @@ void runCommand() {
       break;
     case READ_HEALTH:
       {
-        sprintf(&out_buf[2], "%ld %d %d\r", battery_voltage_mv, battery_current_ma, 0);
+        sprintf(&out_buf[2], "%ld %ld %d\r", battery_voltage_mv, battery_current_ma, 0);
         respond();
       }
       break;
