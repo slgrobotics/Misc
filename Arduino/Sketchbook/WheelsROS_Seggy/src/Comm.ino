@@ -1,3 +1,6 @@
+#include <errno.h>
+#include <inttypes.h>
+
 // **************************
 // Remote control code
 //
@@ -43,14 +46,11 @@ void InitSerial() {
 #define DIGITAL_WRITE  'w'
 #define ANALOG_WRITE   'x'
 
-#define LEFT            0
-#define RIGHT           1
-
 /* Variable initialization */
 
 // Variable to hold the current single-character command
 char cmd;
-String cmd_in;
+char cmd_in[128];
 
 // The arguments converted to integers
 long arg1;
@@ -58,9 +58,14 @@ long arg2;
 
 char out_buf[128];
 
+bool responsePending = false;
+
 void respond() {
-  COMM_SERIAL.print(out_buf);
-  COMM_SERIAL.flush(); // wait for the output stream to finish transmission
+  const size_t length = strlen(out_buf);
+  responsePending = COMM_SERIAL.availableForWrite() < static_cast<int>(length);
+  if (!responsePending) {
+    COMM_SERIAL.write(reinterpret_cast<const uint8_t *>(out_buf), length);
+  }
 }
 
 void respond_OK(char rq_cmd) {
@@ -70,96 +75,96 @@ void respond_OK(char rq_cmd) {
 #endif
 }
 
-void respond_ERROR(String rq_cmd_in) {
+void respond_ERROR(const char *rq_cmd_in) {
   constexpr int maxCommandLength = sizeof(out_buf) - sizeof("? Error: ''\r");
-  snprintf(out_buf, sizeof(out_buf), "? Error: '%.*s'\r", maxCommandLength, rq_cmd_in.c_str());
+  snprintf(out_buf, sizeof(out_buf), "? Error: '%.*s'\r", maxCommandLength, rq_cmd_in);
   respond();
 }
 
+void processCommFrame() {
+  char *context = nullptr;
+  char *command = strtok_r(cmd_in, " \t\n", &context);
+  if (!command) {
+    respond_OK('*');
+    return;
+  }
+
+  char *first = strtok_r(nullptr, " \t\n", &context);
+  char *second = strtok_r(nullptr, " \t\n", &context);
+  char *extra = strtok_r(nullptr, " \t\n", &context);
+  if (command[1] != '\0' || extra) {
+    respond_ERROR("Invalid command frame");
+    return;
+  }
+
+  cmd = command[0];
+  arg1 = arg2 = 0;
+  if (cmd == MOTOR_SPEEDS) {
+    if (!first || !second) {
+      respond_ERROR("Expected two wheel speeds");
+      return;
+    }
+    char *endLeft;
+    char *endRight;
+    errno = 0;
+    arg1 = strtol(first, &endLeft, 10);
+    arg2 = strtol(second, &endRight, 10);
+    if (*endLeft || *endRight || errno == ERANGE) {
+      respond_ERROR("Invalid wheel speed");
+      return;
+    }
+  } else {
+    // Preserve legacy commands, including composite UPDATE_PID arguments.
+    if (first) arg1 = atol(first);
+    if (second) arg2 = atol(second);
+  }
+
+  out_buf[0] = cmd;
+  out_buf[1] = ' ';
+  out_buf[2] = '\0';
+  runCommand();
+}
+
 void readCommCommand() {
+  static size_t length = 0;
+  static bool discardFrame = false;
 
-  if (COMM_SERIAL.available()) {
-    String strs[20];
-    int StringCount = 0;
+  if (responsePending) {
+    respond();
+    if (responsePending) return;
+  }
 
-    cmd_in = COMM_SERIAL.readStringUntil('\r'); // Command is terminated with a CR
-    cmd_in.trim();
-    //Serial.println(cmd_in);
-
-    if (cmd_in.length() == 0) {
-      respond_OK('*');
-      return;    // ignore empty strings
-    }
-
-    // Split the string into substrings:
-    while (cmd_in.length() > 0) {
-      int index = cmd_in.indexOf(' ');
-      if (index == -1) // No space found
-      {
-        strs[StringCount++] = cmd_in;
-        break;
+  // Bound the amount of serial work between FOC updates.
+  for (int bytes = 0; bytes < 32; ++bytes) {
+    const int byte = COMM_SERIAL.read();
+    if (byte < 0) return;
+    if (byte == '\r') {
+      if (discardFrame) {
+        respond_ERROR("Invalid or oversized command frame");
       } else {
-        if (StringCount == 0 && index != 1) { // expect only single character commands
-          //COMM_SERIAL.println("Error: not a command");
-          respond_ERROR(cmd_in);
-          return;
-        }
-        strs[StringCount++] = cmd_in.substring(0, index);
-        cmd_in = cmd_in.substring(index + 1);
+        cmd_in[length] = '\0';
+        processCommFrame();
       }
+      length = 0;
+      discardFrame = false;
+      return;
     }
-
-    cmd = strs[0].charAt(0);
-    out_buf[0] = cmd;
-    out_buf[1] = ' ';
-    out_buf[2] = '\0';
-
-    //Serial.println(StringCount);
-
-    switch (StringCount) {
-      case 1:   // just the command, like "e"
-        runCommand();
-        resetCommand();
-        break;
-
-      case 2:  // command and one simple or composite argument
-        arg1 = strs[1].toInt(); // for commands like "a 4"
-        runCommand();
-        resetCommand();
-        break;
-
-      case 3:   // command and two arguments, like "m 100 200"
-        arg1 = strs[1].toInt();
-        arg2 = strs[2].toInt();
-        runCommand();
-        resetCommand();
-        break;
-
-      default:
-        // something wrong, keep looking for a valid string
-        //COMM_SERIAL.println("Error: wrong number of arguments");
-        respond_ERROR(cmd_in);
-        return;
+    if (byte == 0 || length == sizeof(cmd_in) - 1) {
+      discardFrame = true;
     }
-
-    /*
-      // Show the resulting substrings
-      for (int i = 0; i < StringCount; i++)
-      {
-      Serial.print(i);
-      Serial.print(": \"");
-      Serial.print(strs[i]);
-      Serial.println("\"");
-      }
-    */
+    if (!discardFrame) cmd_in[length++] = static_cast<char>(byte);
   }
 }
 
-/* Clear the current command parameters */
-void resetCommand() {
-  cmd = '\0';
-  arg1 = 0;
-  arg2 = 0;
+// The ROS driver computes encoder deltas across signed 32-bit wraparound.
+// Send each counter as a signed 32-bit value that wraps modulo 2^32.
+// diffdrive_arduino/src/wheel.cpp:48 computes encoder deltas across that wrap.
+int32_t encoderWireCount(long long count) {
+  const uint32_t lowBits = static_cast<uint32_t>(count);
+  const int64_t signedValue = lowBits <= INT32_MAX
+      ? static_cast<int64_t>(lowBits)
+      : static_cast<int64_t>(lowBits) - (int64_t{1} << 32);
+  return static_cast<int32_t>(signedValue);
 }
 
 /* Run a command.  Commands are defined in commands.h */
@@ -167,8 +172,6 @@ void runCommand() {
 
   //Serial.print("runCommand: ");
   //Serial.println(cmd);
-
-  lastCommMs = millis();
 
   switch (cmd) {
     case GET_BAUDRATE:
@@ -219,10 +222,16 @@ void runCommand() {
       break;
 
 #ifdef ARTICUBOTS_USE_BASE
-    case READ_ENCODERS:
-      sprintf(&out_buf[2], "%ld %ld\r", readEncoder(LEFT), readEncoder(RIGHT));
+    case READ_ENCODERS: {
+      noInterrupts();
+      const long long left = Ldistance;
+      const long long right = Rdistance;
+      interrupts();
+      snprintf(&out_buf[2], sizeof(out_buf) - 2, "%" PRId32 " %" PRId32 "\r",
+               encoderWireCount(left), encoderWireCount(right));
       respond();
       break;
+    }
     case RESET_ENCODERS:
       EncodersReset();
       // do nothing
@@ -247,11 +256,7 @@ void runCommand() {
       respond_OK(cmd);
       break;
     case MOTOR_RAW_PWM:
-      /* Reset the auto stop timer */
-      lastMotorCommandMs = millis();
-      speedSetpointL = arg1;
-      speedSetpointR = arg2;
-      respond_OK(cmd);
+      respond_ERROR("Raw PWM is unsupported");
       break;
     case UPDATE_PID:
       // do nothing
@@ -263,10 +268,4 @@ void runCommand() {
       respond_ERROR(cmd_in);
       break;
   }
-}
-
-/* Wrap the encoder reading function */
-long readEncoder(int i) {
-  if (i == LEFT) return Ldistance;
-  else return Rdistance;
 }

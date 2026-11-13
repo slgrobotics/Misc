@@ -91,7 +91,6 @@ float current_dc_R = 0.0;
 
 // milliseconds from last events:
 unsigned long lastMotorCommandMs = 0;
-unsigned long lastCommMs = 0;
 unsigned long lastSonarMs = 0;
 
 //-------------------------------------- End of variable definitions -----------------------------------------//
@@ -165,6 +164,8 @@ void loop() //Main Loop
 
   motorLoop(); // FOC must run as often as possible
 
+  readCommCommand(); // Service USB even if the previous cycle ran long.
+
   boolean isControlLoop = loopCnt % controlLoopFactor == 0;
 
 #ifdef TRACE
@@ -185,24 +186,19 @@ void loop() //Main Loop
   }
 #endif
 
-  if (millis() - lastCommMs > AUTO_STOP_INTERVAL || millis() - lastMotorCommandMs > AUTO_STOP_INTERVAL)
-  {
-    // failsafe - Comm signal or motor command is not detected for more than a second
-    speedSetpointR = speedSetpointL = 0.0;
-  }
+  static bool joystickWasActive = false;
+  const bool joystickActive = isJoystickActive();
+  const bool joystickReleased = joystickWasActive && !joystickActive;
+  joystickWasActive = joystickActive;
 
-  // test - controller should hold this speed:
-  //speedSetpointR = 20;
-  //speedSetpointL = 20;
-
-  if (isJoystickActive())
-  {
-    // ignore Comm values and override by joystick on A2 and A9:
-
+  const bool commandTimedOut = millis() - lastMotorCommandMs > AUTO_STOP_INTERVAL;
+  if (joystickActive) {
     computeJoystickSpeeds();
-
     speedSetpointL = joystickSpeedL;
     speedSetpointR = joystickSpeedR;
+  } else if (joystickReleased || commandTimedOut) {
+    speedSetpointL = speedSetpointR = 0.0;
+    set_motors();
   }
 
   // At this point the speedSetpointL/R should be determined and will be used for motors

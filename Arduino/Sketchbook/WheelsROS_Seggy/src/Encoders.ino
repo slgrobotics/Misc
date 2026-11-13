@@ -20,10 +20,12 @@ void EncodersInit() {
 }
 
 void EncodersReset() {
+  noInterrupts();
   Ldistance = 0;
   Rdistance = 0;
   LdistancePrev = 0;
   RdistancePrev = 0;
+  interrupts();
 }
 
 // ********************************************************

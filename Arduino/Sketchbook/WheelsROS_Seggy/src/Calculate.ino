@@ -4,18 +4,18 @@
 
 void speed_calculate()
 {
-  distR = Rdistance - RdistancePrev; // Seggy robot: ~3 with 10Hz cycle, at full power and wheels in the air
-  distL = Ldistance - LdistancePrev;
+  noInterrupts();
+  const long long right = Rdistance;
+  const long long left = Ldistance;
+  interrupts();
 
+  distR = right - RdistancePrev;  // Seggy robot: ~3...4 with 10Hz cycle, at full power and wheels in the air
+  distL = left - LdistancePrev;
+  RdistancePrev = right;
+  LdistancePrev = left;
+
+  // we don't need to keep track of total distances per wheel, only increments - for speed loop.
   // note: this is the place to scale -100..100% speed to 255 pwm:
   speedMeasured_R = (double)map(distR, -4, 4, -100, 100);  // first pair is number of ticks at full speed, we map it to 100%
   speedMeasured_L = (double)map(distL, -4, 4, -100, 100);
-
-  // we don't need to keep track of total distances per wheel, only increments - for speed loop.
-  // beware - if EncodersReset() is not called often enough, L/Rdistance will
-  // overflow at 32K and cause violent jerking of the wheels!
-  //EncodersReset();
-
-  RdistancePrev = Rdistance;
-  LdistancePrev = Ldistance;
 }

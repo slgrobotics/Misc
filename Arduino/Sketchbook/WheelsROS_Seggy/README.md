@@ -11,6 +11,7 @@ Back to [Main Project Home](https://github.com/slgrobotics/articubot_one/wiki)
 - [ROS 2 serial interface](#ros-2-serial-interface)
 - [Teensy 4.0 pin assignments](#teensy-40-pin-assignments)
 - [Build and upload](#build-and-upload)
+- [Serial bench test](#serial-bench-test)
 
 -------------
 
@@ -23,17 +24,17 @@ Seggy needs to control two powered wheels to move and steer. This firmware runs 
 - **Startup.** The Teensy initializes the motor drivers, current sensors, and Hall sensors, then aligns the motors. The wheels can move during alignment. The buzzer gives two short startup beeps, followed by one beep for successful initialization or three longer beeps for failure. The main loop skips motor control if initialization fails.
 - **Motor control.** SimpleFOC uses the three Hall signals from each wheel for closed-loop velocity control. Wheel commands are limited to ±100% and mapped to targets of up to ±3.5 rad/s. The firmware runs the motor loop as often as possible and normally updates targets about every 100 ms.
 - **Joystick override.** Pulling pin 32 low gives the joystick control. Its X and Y axes are mixed into left and right wheel commands. Pin 33 reads the joystick button for diagnostics.
-- **ROS 2 timeout.** If more than two seconds pass without a motor command, the firmware clears the drive setpoints. An active joystick override can still supply wheel commands. A partial serial frame can delay the timeout check because the current serial reader waits for the frame terminator.
+- **ROS 2 timeout.** If more than two seconds pass without a motor command, the firmware clears the drive setpoints. An active joystick override can still supply wheel commands. Releasing joystick override commands zero until a fresh ROS 2 motor command arrives.
 - **Battery monitoring.** The firmware samples the battery voltage through a divider and turns on the buzzer when the measured voltage falls below 10 V.
 
 ## ROS 2 serial interface
 
-The Teensy uses USB `Serial` with a configured baud rate of 115200. Send space-separated commands ending with a carriage return (`\r`). The main commands used for the drive base are below.
+The Teensy uses USB `Serial` with a configured baud rate of 115200. Send space-separated commands ending with a carriage return (`\r`). The receiver accepts up to 127 bytes per frame before the terminator. It rejects oversized frames and malformed wheel-speed commands. The legacy raw PWM command (`o`) returns an error.
 
 | Command | Effect |
 | --- | --- |
 | `m <left> <right>` | Set signed wheel speeds as percentages from −100 to 100. Positive values command forward travel. |
-| `e` | Read cumulative left and right wheel counts. Seggy's ROS 2 configuration uses 60 counts per revolution. |
+| `e` | Read cumulative left and right wheel counts as signed 32-bit values that wrap at the range limits. Seggy's ROS 2 configuration uses 60 counts per revolution. |
 | `r` | Reset both wheel counts. |
 | `h` | Read battery voltage in millivolts, followed by two zero fields in the current firmware. |
 | `b` | Report the configured baud rate. |
@@ -84,6 +85,16 @@ pio run -e teensy40 -t upload
 ```
 
 The project uses the command-line Teensy loader. If the loader waits for the bootloader, press the Teensy's **Program** button once.
+
+## Serial bench test
+
+Lift both wheels clear of the bench, disable joystick override, and close the PlatformIO serial monitor. Upload the firmware built without `TRACE` so the USB serial stream contains protocol replies. The test requires Python 3.10 or later and pySerial.
+
+```sh
+python3 test/serial_bench.py --port /dev/ttyACM0
+```
+
+The test checks serial framing and recovery, battery and encoder replies, and encoder reset. It runs each wheel in both directions at full commanded speed, checks that encoder counts follow the requested directions, and verifies explicit and watchdog stops. It sends a final zero command on exit.
 
 -----------------------
 
