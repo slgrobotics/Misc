@@ -40,13 +40,13 @@ Dragger needs to turn two powered wheels to move and steer. This program runs on
 | Joystick override, button | D22, D24 |
 | Battery voltage sense | A4 |
 | Battery current sense | A5 |
-| Charger status, active low | A11 (D65) |
+| Charger status, active low | D37 |
 | Buzzer | D13 |
 | Diagnostic LEDs, red, green, blue | D33, D35, D31 |
 | Parking sonar I²C, SDA and SCL | D20, D21 |
 | ROS 2 serial | USB via Serial (UART0) |
 
-A11 uses the Mega’s internal pull-up. Connect the charger’s open-collector output to A11 with a shared ground. The output pulls A11 LOW while charging and releases it otherwise. The output must tolerate the Mega’s 5 V pull-up.
+D37 uses the Mega’s internal pull-up. Connect the charger’s open-collector output to D37 with a shared ground. The output pulls D37 LOW while charging and releases it otherwise. The output must tolerate the Mega’s 5 V pull-up.
 
 ## ROS 2 serial protocol
 
@@ -87,7 +87,7 @@ For the [serial test](test/serial_bench.py), install pySerial for Python 3.10 or
 python3 test/serial_bench.py --port /dev/ttyACM0
 ```
 
-Pass `--expect-charging 0` with A11 released or `--expect-charging 1` with the charger output pulling it LOW.
+Pass `--expect-charging 0` with D37 released or `--expect-charging 1` with the charger output pulling it LOW.
 
 For the ROS 2 test, source ROS and the overlays containing `articubot_one` and the updated `diffdrive_arduino` in both terminals. The local ROS 2 Lyrical setup uses:
 
