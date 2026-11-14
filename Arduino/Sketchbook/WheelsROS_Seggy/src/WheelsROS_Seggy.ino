@@ -42,7 +42,7 @@ const int batteryChargingInPin = A11;  // LOW while battery is charging - set by
 
 // If you have any pins left, you can use them for a status LED. It will blink if the loop is running.
 // Do not use pin 13 (LED_BUILTIN), it is used by the right wheel driver. Teensy 4.0 has a built-in LED on pin 13, but it is not used here.
-//#define STATUS_LED_PIN A13
+#define STATUS_LED_PIN A13
 
 const int mydt = 5;           // 5 milliseconds make for 200 Hz operating cycle
 const int controlLoopFactor = 20; // factor of 20 make for 100 ms Control cycle
