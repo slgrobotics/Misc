@@ -36,7 +36,7 @@
 
 const int batteryVoltageInPin = A10;  // Analog input pin that the battery 1/3 divider is attached to. 4.7K / 1.2K does the job for 15V max.
 
-const int batteryChargingInPin = A11;  // LOW while charging
+const int batteryChargingInPin = A11;  // LOW while battery is charging - set by charger hardware (open collector transistor). Uses internal pull-up.
 
 #define BUZZER_PIN 26
 
