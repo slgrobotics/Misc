@@ -238,7 +238,8 @@ void runCommand() {
         long current_ma = analogRead(batteryCurrentInPin);
         current_ma = max(39l,current_ma);
         current_ma = (current_ma - 39l) * 4530l / 148l; // milliamperes, returns 148 for 4.53A
-        sprintf(&out_buf[2], "%ld %ld %d\r", voltage_mv, current_ma, freeRam());
+        sprintf(&out_buf[2], "%ld %ld %d %d\r", voltage_mv, current_ma, freeRam(),
+                digitalRead(batteryChargingInPin) == LOW);
         respond();
       }
       break;
