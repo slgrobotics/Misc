@@ -237,7 +237,8 @@ void runCommand() {
       break;
     case READ_HEALTH:
       {
-        sprintf(&out_buf[2], "%ld %ld %d\r", battery_voltage_mv, battery_current_ma, 0);
+        sprintf(&out_buf[2], "%ld %ld %d %d\r", battery_voltage_mv, battery_current_ma, 0,
+                digitalRead(batteryChargingInPin) == LOW);
         respond();
       }
       break;

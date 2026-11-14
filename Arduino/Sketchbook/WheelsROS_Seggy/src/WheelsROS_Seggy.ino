@@ -36,6 +36,8 @@
 
 const int batteryVoltageInPin = A10;  // Analog input pin that the battery 1/3 divider is attached to. 4.7K / 1.2K does the job for 15V max.
 
+const int batteryChargingInPin = A11;  // LOW while charging
+
 #define BUZZER_PIN 26
 
 // If you have any pins left, you can use them for a status LED. It will blink if the loop is running.
@@ -109,6 +111,7 @@ void setup()
 
   InitLeds();
 
+  pinMode(batteryChargingInPin, INPUT_PULLUP);
   pinMode (BUZZER_PIN, OUTPUT);
   buzz(2, 50, 100);
 

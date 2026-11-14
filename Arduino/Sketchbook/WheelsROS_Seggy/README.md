@@ -45,8 +45,10 @@ The Teensy uses USB `Serial` with a configured baud rate of 115200. Send space-s
 | `m <left> <right>` | Set signed wheel speeds as percentages from −100 to 100. Positive values command forward travel. |
 | `e` | Read cumulative left and right wheel counts as signed 32-bit values that wrap at the range limits. Seggy's ROS 2 configuration uses 60 counts per revolution. |
 | `r` | Reset both wheel counts. |
-| `h` | Read battery voltage in millivolts, followed by two zero fields in the current firmware. |
+| `h` | Read battery voltage in millivolts, two zero fields for current and free memory, and a charging flag (0 or 1). |
 | `b` | Report the configured baud rate. |
+
+Use a driver version that accepts the fourth health field before flashing this firmware. Seggy enables `battery_charging_field` in its ROS hardware configuration. With the flag present, ROS publishes `CHARGING` or `NOT_CHARGING` and reports NaN for unmeasured battery current. Older three-field replies retain the legacy battery behavior.
 
 See the [ROS 2 diffdrive_arduino driver](https://github.com/slgrobotics/diffdrive_arduino) and [serial command implementation](src/Comm.ino).
 
@@ -68,10 +70,11 @@ The numbers are Teensy GPIO numbers. Analog aliases appear in parentheses.
 | Joystick override, active low | 32 |
 | Joystick button, active low | 33 |
 | Battery voltage divider | 24 (A10) |
+| Charger status, active low | 25 (A11) |
 | Buzzer | 26 (A12) |
 | ROS 2 serial connection | USB |
 
-Reserve pin 13 for right motor driver enable. The external status LED is disabled by default. To enable it on pin 27 (A13), check that the pin is free on the carrier board, then uncomment `#define STATUS_LED_PIN A13` in [WheelsROS_Seggy.ino](src/WheelsROS_Seggy.ino) and rebuild. Pin 25 (A11) is also unassigned in the sketch and can be used if it is free on the carrier board.
+Reserve pin 13 for right motor driver enable. The external status LED is disabled by default. To enable it on pin 27 (A13), check that the pin is free on the carrier board, then uncomment `#define STATUS_LED_PIN A13` in [WheelsROS_Seggy.ino](src/WheelsROS_Seggy.ino) and rebuild. A11 uses the Teensy internal pull-up. Connect the charger’s open-collector output to A11 with a shared ground. The transistor pulls A11 LOW while charging and releases it otherwise.
 
 When enabled, the LED blinks at about 5 Hz during normal operation and blinks slowly if motor initialization fails.
 

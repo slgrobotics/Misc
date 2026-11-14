@@ -56,8 +56,12 @@ class Bench:
         self.drive(0, 0)
         expect(self.request(b"b", "b ") == "b 115200", "Unexpected baud reply")
         health = list(map(int, self.request(b"h", "h ").split()[1:]))
-        expect(len(health) == 3 and health[0] > 0, f"Invalid health reply: {health}")
+        expect(len(health) in (3, 4) and health[0] > 0, f"Invalid health reply: {health}")
+        if len(health) == 4:
+            expect(health[3] in (0, 1), f"Invalid charging flag: {health[3]}")
         print(f"Battery: {health[0]} mV")
+        if len(health) == 4:
+            print(f"Charging: {bool(health[3])}")
         self.request(b"", "* OK")
         for invalid in (b"?", b"mm", b"m", b"m 0", b"m x 0", b"m 0 0 extra",
                         b"m 999999999999999999999 0", b"m 0\x00 0",
