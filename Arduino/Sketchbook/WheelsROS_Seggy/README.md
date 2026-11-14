@@ -92,15 +92,33 @@ Connect the Teensy over USB and choose **Upload**, or run:
 ```sh
 pio run -e teensy40 -t upload
 ```
-
 The project uses the command-line Teensy loader. If the loader waits for the bootloader, press the Teensy's **Program** button once.
+
+Uploading from VS Code:
+
+<img alt="Upload from VS Code" src="https://github.com/user-attachments/assets/618be880-6499-4219-90db-d9e696e28423" />
 
 ## Serial bench test
 
 Lift both wheels clear of the bench, disable joystick override, and close the PlatformIO serial monitor. Upload the firmware built without `TRACE` so the USB serial stream contains protocol replies. The test requires Python 3.10 or later and pySerial.
 
 ```sh
-python3 test/serial_bench.py --port /dev/ttyACM0
+sss@sss:~/Misc/Arduino/Sketchbook/WheelsROS_Seggy/test$ python3 serial_bench.py --port /dev/ttyACM0
+    Battery: 13271 mV
+    PASS serial framing, error recovery, health and encoder reset
+    PASS motion L=+100% R=+0% encoder delta=(54, 0)
+    PASS motion L=-100% R=+0% encoder delta=(-55, 0)
+    PASS motion L=+0% R=+100% encoder delta=(0, 55)
+    PASS motion L=+0% R=-100% encoder delta=(0, -55)
+    PASS motion L=+100% R=+100% encoder delta=(55, 55)
+    PASS motion L=-100% R=-100% encoder delta=(-55, -54)
+    PASS motion L=+100% R=-100% encoder delta=(55, -54)
+    PASS motion L=-100% R=+100% encoder delta=(-57, 57)
+    PASS explicit zero command
+    PASS watchdog during encoder polling
+    PASS watchdog with partial frame
+    PASS Seggy serial bench test
+    sss@sss:~/Misc/Arduino/Sketchbook/WheelsROS_Seggy/test$ 
 ```
 
 The test checks serial framing and recovery, battery and encoder replies, and encoder reset. It runs each wheel in both directions at full commanded speed, checks that encoder counts follow the requested directions, and verifies explicit and watchdog stops. It sends a final zero command on exit.
@@ -114,7 +132,7 @@ In both terminals, source your ROS installation and the overlays that provide `a
 ```sh
 source /opt/ros/lyrical/setup.bash
 source ~/robot_ws/install/local_setup.bash
-source ~/tmp_ws/install/local_setup.bash
+source ~/tmp_ws/install/local_setup.bash  # where diffdrive_arduino is built
 ```
 
 From the project directory, start the bench controllers in the first terminal:
@@ -126,7 +144,16 @@ ros2 launch ./test/ros2_bench.launch.py
 Once both controllers are active, run the test in the second terminal:
 
 ```sh
-python3 test/ros2_bench.py
+sss@sss:~/Misc/Arduino/Sketchbook/WheelsROS_Seggy$ python3 test/ros2_bench.py
+    PASS L=+1.667 R=+0.000 rad/s, encoder delta=[51, 0]
+    PASS L=-1.667 R=+0.000 rad/s, encoder delta=[-51, 0]
+    PASS L=+0.000 R=+1.667 rad/s, encoder delta=[0, 50]
+    PASS L=+0.000 R=-1.667 rad/s, encoder delta=[0, -51]
+    PASS L=+1.667 R=+1.667 rad/s, encoder delta=[50, 52]
+    PASS L=-1.667 R=-1.667 rad/s, encoder delta=[-52, -51]
+    PASS L=+1.667 R=-1.667 rad/s, encoder delta=[52, -50]
+    PASS L=-1.667 R=+1.667 rad/s, encoder delta=[-55, 51]
+    PASS Seggy ROS 2 wheel bench test
 ```
 
 The launch loads Seggy's real URDF and `~/robot_ws/src/articubot_one/robots/seggy/config/hardware.yaml`. A direct wheel controller sends joint velocities through `diffdrive_arduino`, and the test checks the encoder-derived joint positions. By default it exercises both directions at 100% firmware command, one wheel at a time and together, then checks that feedback settles after zero commands. Use `--percent 60` for a lower command. To use a different hardware YAML, pass the same path to `hardware_config:=` in the launch and `--hardware-config` in the test. Shut down the launch after testing.
