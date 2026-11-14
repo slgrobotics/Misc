@@ -6,7 +6,7 @@ Back to [Main Project Home](https://github.com/slgrobotics/articubot_one/wiki)
 
 **Contents:**
 
-- [What is this package for?](#what-is-this-package-for)
+- [What is this code for?](#what-is-this-code-for)
 - [How Seggy drives](#how-seggy-drives)
 - [ROS 2 serial interface](#ros-2-serial-interface)
 - [Teensy 4.0 pin assignments](#teensy-40-pin-assignments)
@@ -16,9 +16,17 @@ Back to [Main Project Home](https://github.com/slgrobotics/articubot_one/wiki)
 
 -------------
 
-## What is this package for?
+## What is this code for?
 
 Seggy needs to control two powered wheels to move and steer. This firmware runs on a small computer called a Teensy 4.0. It takes driving commands from a joystick or from ROS 2 on a separate computer, then uses sensors in the wheels to track how fast they turn. For example, when one wheel turns faster than the other, Seggy steers toward the slower wheel.
+
+Related packages:
+- https://github.com/slgrobotics/diffdrive_arduino
+
+See:
+- https://github.com/slgrobotics/robots_bringup/tree/main/Docs/MakeYourOwn#base-control---the-arduino-way
+- https://github.com/slgrobotics/robots_bringup/tree/main/Docs/MakeYourOwn#bill-of-materials-bom
+- https://github.com/slgrobotics/robots_bringup/tree/main/Docs/Seggy
 
 ## How Seggy drives
 

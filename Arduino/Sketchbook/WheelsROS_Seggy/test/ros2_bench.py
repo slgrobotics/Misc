@@ -3,10 +3,22 @@
 Check Seggy wheel commands and feedback through ros2_control.
 
 # Terminal 1:
+
+source ~/tmp_ws/install/local_setup.bash  # where diffdrive_arduino is built
 ros2 launch ./test/ros2_bench.launch.py
 
 # Terminal 2, once the controllers are active:
-python3 test/ros2_bench.py
+
+sss@sss:~/Misc/Arduino/Sketchbook/WheelsROS_Seggy$ python3 test/ros2_bench.py
+    PASS L=+1.667 R=+0.000 rad/s, encoder delta=[51, 0]
+    PASS L=-1.667 R=+0.000 rad/s, encoder delta=[-51, 0]
+    PASS L=+0.000 R=+1.667 rad/s, encoder delta=[0, 50]
+    PASS L=+0.000 R=-1.667 rad/s, encoder delta=[0, -51]
+    PASS L=+1.667 R=+1.667 rad/s, encoder delta=[50, 52]
+    PASS L=-1.667 R=-1.667 rad/s, encoder delta=[-52, -51]
+    PASS L=+1.667 R=-1.667 rad/s, encoder delta=[52, -50]
+    PASS L=-1.667 R=+1.667 rad/s, encoder delta=[-55, 51]
+    PASS Seggy ROS 2 wheel bench test
 
 """
 

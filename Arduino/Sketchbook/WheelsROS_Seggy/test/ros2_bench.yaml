@@ -6,6 +6,10 @@
     wheel_velocity:
       type: forward_command_controller/ForwardCommandController
 
+/seggy_bench/joint_states:
+  ros__parameters:
+    use_local_topics: false
+
 /seggy_bench/wheel_velocity:
   ros__parameters:
     joints: [left_wheel_joint, right_wheel_joint]
