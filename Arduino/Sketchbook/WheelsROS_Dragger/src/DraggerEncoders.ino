@@ -31,10 +31,18 @@ void EncodersInit()
 
 void EncodersReset()
 {
-  Ldistance = 0;
-  Rdistance = 0;
-  LdistancePrev = 0;
-  RdistancePrev = 0;
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+    Ldistance = Rdistance = 0;
+    LdistancePrev = RdistancePrev = 0;
+  }
+}
+
+void snapshotEncoders(long long &left, long long &right)
+{
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+    left = Ldistance;
+    right = Rdistance;
+  }
 }
 
 // ********************************************************

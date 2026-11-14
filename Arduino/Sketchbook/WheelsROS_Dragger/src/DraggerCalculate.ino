@@ -4,20 +4,17 @@
 
 void speed_calculate()
 {
-  distR = Rdistance - RdistancePrev; // Dragger robot: ~624 with 10Hz cycle, at full power (pwm=255) and wheels in the air
-  distL = Ldistance - LdistancePrev;
+  long long left, right;
+  snapshotEncoders(left, right);
+  distR = right - RdistancePrev;
+  distL = left - LdistancePrev;
+  RdistancePrev = right;
+  LdistancePrev = left;
 
+  // Dragger robot: dist=~624 with 10Hz cycle, at full power (pwm=255) and wheels in the air.
   // note: this is the place to scale -100..100% speed to 255 pwm:
-  speedMeasured_R = (double)map(distR, -624, 624, -100, 100);  // first pair is number of ticks at full speed, we map it to 100%
+  speedMeasured_R = (double)map(distR, -624, 624, -100, 100);
   speedMeasured_L = (double)map(distL, -624, 624, -100, 100);
-
-  // we don't need to keep track of total distances per wheel, only increments - for speed loop.
-  // beware - if EncodersReset() is not called often enough, L/Rdistance will
-  // overflow at 32K and cause violent jerking of the wheels!
-  //EncodersReset();
-
-  RdistancePrev = Rdistance;
-  LdistancePrev = Ldistance;
 }
 
 // **********************************************
@@ -61,6 +58,11 @@ void ema(int ch)
       valuePrev[ch] = setpointSpeedL;
       break;
   }
+}
+
+void clearEma()
+{
+  valuePrev[LeftMotorChannel] = valuePrev[RightMotorChannel] = 0;
 }
 
 void resetEma(int ch)

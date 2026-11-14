@@ -1,4 +1,4 @@
-//#define TRACE
+#define TRACE
 #define USE_EMA
 
 #include <digitalWriteFast.h>  // library for high performance reads and writes by jrraines
@@ -9,6 +9,8 @@
 // See https://github.com/slgrobotics/robots_bringup
 
 #include <Wire.h>
+#include <errno.h>
+#include <util/atomic.h>
 
 // looks like AVR MCs don't have this defined, but it works:
 #define WIRE_HAS_TIMEOUT
@@ -107,6 +109,7 @@ volatile int rangeBLcm;
 
 /* Stop the robot if it hasn't received a movement command
   in this number of milliseconds */
+bool rawPwmActive = false;
 unsigned long AUTO_STOP_INTERVAL = 2000;
 
 // milliseconds from last events:
@@ -186,6 +189,7 @@ void loop() //Main Loop
     }
   }
 
+  readCommCommand();
   loopCnt++;
   timer_old = timer;
   timer = micros();
@@ -210,68 +214,42 @@ void loop() //Main Loop
   }
 #endif
 
-  if (millis() - lastCommMs > AUTO_STOP_INTERVAL || millis() - lastMotorCommandMs > AUTO_STOP_INTERVAL)
-  {
-    // failsafe - Comm signal or motor command is not detected for more than a second
-    desiredSpeedR = desiredSpeedL = 0.0;
-  }
-
-  // test - controller should hold this speed:
-  //desiredSpeedR = 10;
-  //desiredSpeedL = 10;
-
-  if (isControlByJoystick())
-  {
-    // ignore Comm values and override by joystick on A0 and A1:
-
+  static bool joystickWasActive = false;
+  const bool joystickActive = isControlByJoystick();
+  if (joystickActive) {
+    if (!joystickWasActive || rawPwmActive) stopDrive();
     computeJoystickSpeeds();
-
     desiredSpeedL = joystickSpeedL;
     desiredSpeedR = joystickSpeedR;
-
-    //  myPID_L.SetMode(MANUAL);  // Disables PID, input goes straight to PWM
-    //  myPID_R.SetMode(MANUAL);
-    //} else {
-    //  myPID_L.SetMode(AUTOMATIC);
-    //  myPID_R.SetMode(AUTOMATIC);
+  } else if (joystickWasActive || millis() - lastMotorCommandMs > AUTO_STOP_INTERVAL) {
+    stopDrive();
   }
+  joystickWasActive = joystickActive;
 
+  if (!rawPwmActive) {
 #ifdef USE_EMA
-  // smooth movement by using ema: take desiredSpeed and produce setpointSpeed
-  ema(RightMotorChannel);
-  ema(LeftMotorChannel);
-#else // USE_EMA
-  setpointSpeedR = desiredSpeedR; // no ema
-  setpointSpeedL = desiredSpeedL;
-#endif // USE_EMA
-
-  // compute control inputs - increments to current PWM
-  myPID_R.Compute();
-  myPID_L.Compute();
+    ema(RightMotorChannel);
+    ema(LeftMotorChannel);
+#else
+    setpointSpeedR = desiredSpeedR;
+    setpointSpeedL = desiredSpeedL;
+#endif
+    myPID_R.Compute();
+    myPID_L.Compute();
+  }
 
   if (isPidLoop) // we do speed PID and calculation on a slower scale, about 20Hz
   {
     // based on PWM increments, calculate speed:
     speed_calculate();
 
-    // Calculate the pwm, given the desired speed (pick up values computed by PIDs):
-    pwm_calculate();
-
-    // if(abs(pwm_R) > 250 || abs(desiredSpeedR - speedMeasured_R) > 3) {
-    //   Serial.print(speedMeasured_R);
-    //   Serial.print("  ");
-    //   Serial.println(pwm_R);
-    // }
-
-    // test: At both motors set to +80 expect Ldistance and Rdistance to increase
-    //pwm_R = 80.0;
-    //pwm_L = 80.0;
-    //if(!isControlByJoystick()) {
-    //  pwm_L = 255.0;  // measure full speed distR and distL. See SpeedControl tab.
-    //  pwm_R = 255.0;
-    //}
-
-    set_motors();
+    if (!rawPwmActive && (desiredSpeedL != 0 || desiredSpeedR != 0 ||
+        abs(setpointSpeedL) > 0.01 || abs(setpointSpeedR) > 0.01)) {
+      pwm_calculate();
+      set_motors();
+    } else if (!rawPwmActive && (pwm_L != 0 || pwm_R != 0)) {
+      stopDrive();
+    }
 
     digitalWriteFast(redLedPin, millis() - lastCommMs > 1000 ? HIGH : LOW);
     //digitalWriteFast(whiteLedPin, millis() - lastMotorCommandMs > 1000 ? HIGH : LOW);

@@ -11,8 +11,10 @@ void InitLeds()
 void printAll()
 {
   // takes 34ms and completely stops the 5ms cycle
-  double Ldur = (double)Ldistance;
-  double Rdur = (double)Rdistance;
+  long long left, right;
+  snapshotEncoders(left, right);
+  double Ldur = (double)left;
+  double Rdur = (double)right;
 
   Serial.println("--------------------");
 

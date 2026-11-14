@@ -239,19 +239,19 @@ void setTimerForPWM()
 
   //---------------------------------------------- Set PWM frequency for D6, D7 & D8 ---------------------------
 
-  //TCCR4B = TCCR4B & B11111000 | B00000001;    // set timer 4 divisor to     1 for PWM frequency of 31372.55 Hz
-  TCCR4B = TCCR4B & B11111000 | B00000010;    // set timer 4 divisor to     8 for PWM frequency of  3921.16 Hz
-  //  TCCR4B = TCCR4B & B11111000 | B00000011;    // set timer 4 divisor to    64 for PWM frequency of   490.20 Hz
-  //TCCR4B = TCCR4B & B11111000 | B00000100;    // set timer 4 divisor to   256 for PWM frequency of   122.55 Hz
-  //TCCR4B = TCCR4B & B11111000 | B00000101;    // set timer 4 divisor to  1024 for PWM frequency of    30.64 Hz
+  //TCCR4B = (TCCR4B & B11111000) | B00000001;    // set timer 4 divisor to     1 for PWM frequency of 31372.55 Hz
+  TCCR4B = (TCCR4B & B11111000) | B00000010;    // set timer 4 divisor to     8 for PWM frequency of  3921.16 Hz
+  //  TCCR4B = (TCCR4B & B11111000) | B00000011;    // set timer 4 divisor to    64 for PWM frequency of   490.20 Hz
+  //TCCR4B = (TCCR4B & B11111000) | B00000100;    // set timer 4 divisor to   256 for PWM frequency of   122.55 Hz
+  //TCCR4B = (TCCR4B & B11111000) | B00000101;    // set timer 4 divisor to  1024 for PWM frequency of    30.64 Hz
 
 
   //---------------------------------------------- Set PWM frequency for D44, D45 & D46 ------------------------
 
-  //TCCR5B = TCCR5B & B11111000 | B00000001;    // set timer 5 divisor to     1 for PWM frequency of 31372.55 Hz
-  TCCR5B = TCCR5B & B11111000 | B00000010;    // set timer 5 divisor to     8 for PWM frequency of  3921.16 Hz
-  //  TCCR5B = TCCR5B & B11111000 | B00000011;    // set timer 5 divisor to    64 for PWM frequency of   490.20 Hz
-  //TCCR5B = TCCR5B & B11111000 | B00000100;    // set timer 5 divisor to   256 for PWM frequency of   122.55 Hz
-  //TCCR5B = TCCR5B & B11111000 | B00000101;    // set timer 5 divisor to  1024 for PWM frequency of    30.64 Hz
+  //TCCR5B = (TCCR5B & B11111000) | B00000001;    // set timer 5 divisor to     1 for PWM frequency of 31372.55 Hz
+  TCCR5B = (TCCR5B & B11111000) | B00000010;    // set timer 5 divisor to     8 for PWM frequency of  3921.16 Hz
+  //  TCCR5B = (TCCR5B & B11111000) | B00000011;    // set timer 5 divisor to    64 for PWM frequency of   490.20 Hz
+  //TCCR5B = (TCCR5B & B11111000) | B00000100;    // set timer 5 divisor to   256 for PWM frequency of   122.55 Hz
+  //TCCR5B = (TCCR5B & B11111000) | B00000101;    // set timer 5 divisor to  1024 for PWM frequency of    30.64 Hz
 
 }
