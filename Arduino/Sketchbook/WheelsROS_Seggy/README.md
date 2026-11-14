@@ -48,7 +48,7 @@ The Teensy uses USB `Serial` with a configured baud rate of 115200. Send space-s
 | `h` | Read battery voltage in millivolts, two zero fields for current and free memory, and a charging flag (0 or 1). |
 | `b` | Report the configured baud rate. |
 
-Use a driver version that accepts the fourth health field before flashing this firmware. Seggy enables `battery_charging_field` in its ROS hardware configuration. With the flag present, ROS publishes `CHARGING` or `NOT_CHARGING` and reports NaN for unmeasured battery current. Older three-field replies retain the legacy battery behavior.
+Use a driver version that accepts the fourth health field before flashing this firmware. Seggy enables `has_battery_charging_field` in its ROS hardware configuration. With the flag present, ROS publishes `CHARGING` or `NOT_CHARGING` and reports NaN for unmeasured battery current. At or above `battery_full_voltage` (14.5 V by default), ROS reports `FULL`. Below that threshold, older three-field replies use the legacy voltage heuristic.
 
 See the [ROS 2 diffdrive_arduino driver](https://github.com/slgrobotics/diffdrive_arduino) and [serial command implementation](src/Comm.ino).
 
