@@ -1,0 +1,12 @@
+/seggy_bench/controller_manager:
+  ros__parameters:
+    update_rate: 60
+    joint_states:
+      type: joint_state_broadcaster/JointStateBroadcaster
+    wheel_velocity:
+      type: forward_command_controller/ForwardCommandController
+
+/seggy_bench/wheel_velocity:
+  ros__parameters:
+    joints: [left_wheel_joint, right_wheel_joint]
+    interface_name: velocity

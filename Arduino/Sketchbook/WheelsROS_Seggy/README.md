@@ -12,6 +12,7 @@ Back to [Main Project Home](https://github.com/slgrobotics/articubot_one/wiki)
 - [Teensy 4.0 pin assignments](#teensy-40-pin-assignments)
 - [Build and upload](#build-and-upload)
 - [Serial bench test](#serial-bench-test)
+- [ROS 2 bench test](#ros-2-bench-test)
 
 -------------
 
@@ -95,6 +96,32 @@ python3 test/serial_bench.py --port /dev/ttyACM0
 ```
 
 The test checks serial framing and recovery, battery and encoder replies, and encoder reset. It runs each wheel in both directions at full commanded speed, checks that encoder counts follow the requested directions, and verifies explicit and watchdog stops. It sends a final zero command on exit.
+
+## ROS 2 bench test
+
+Lift both wheels clear of the bench, disable joystick override, close the serial monitor, and stop any other ROS bringup using the Teensy. Use firmware built without `TRACE`.
+
+In both terminals, source your ROS installation and the overlays that provide `articubot_one` and `diffdrive_arduino`. For the local Lyrical setup:
+
+```sh
+source /opt/ros/lyrical/setup.bash
+source ~/robot_ws/install/local_setup.bash
+source ~/tmp_ws/install/local_setup.bash
+```
+
+From the project directory, start the bench controllers in the first terminal:
+
+```sh
+ros2 launch ./test/ros2_bench.launch.py
+```
+
+Once both controllers are active, run the test in the second terminal:
+
+```sh
+python3 test/ros2_bench.py
+```
+
+The launch loads Seggy's real URDF and `~/robot_ws/src/articubot_one/robots/seggy/config/hardware.yaml`. A direct wheel controller sends joint velocities through `diffdrive_arduino`, and the test checks the encoder-derived joint positions. By default it exercises both directions at 100% firmware command, one wheel at a time and together, then checks that feedback settles after zero commands. Use `--percent 60` for a lower command. To use a different hardware YAML, pass the same path to `hardware_config:=` in the launch and `--hardware-config` in the test. Shut down the launch after testing.
 
 -----------------------
 
