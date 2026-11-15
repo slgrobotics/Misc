@@ -9,21 +9,25 @@ import serial
 """
 
 sss@sss:~/Misc/Arduino/Sketchbook/WheelsROS_Dragger/test$ python3 serial_bench.py --port /dev/ttyACM0
-Battery: 13271 mV
+Battery: 13194 mV, 91 mA, charging=False
 PASS serial framing, error recovery, health and encoder reset
-PASS motion L=+100% R=+0% encoder delta=(54, 0)
-PASS motion L=-100% R=+0% encoder delta=(-55, 0)
-PASS motion L=+0% R=+100% encoder delta=(0, 55)
-PASS motion L=+0% R=-100% encoder delta=(0, -55)
-PASS motion L=+100% R=+100% encoder delta=(55, 55)
-PASS motion L=-100% R=-100% encoder delta=(-55, -54)
-PASS motion L=+100% R=-100% encoder delta=(55, -54)
-PASS motion L=-100% R=+100% encoder delta=(-57, 57)
+PASS motion L=+100% R=+0% encoder delta=(8272, 0)
+PASS motion L=-100% R=+0% encoder delta=(-8278, 0)
+PASS motion L=+0% R=+100% encoder delta=(0, 8031)
+PASS motion L=+0% R=-100% encoder delta=(0, -8414)
+PASS motion L=+100% R=+100% encoder delta=(8345, 7983)
+PASS motion L=-100% R=-100% encoder delta=(-8237, -8293)
+PASS motion L=+100% R=-100% encoder delta=(8360, -8253)
+PASS motion L=-100% R=+100% encoder delta=(-8300, 8041)
+PASS motion L=+180 PWM R=+0 PWM encoder delta=(7058, 0)
+PASS motion L=+0 PWM R=-180 PWM encoder delta=(0, -6957)
 PASS explicit zero command
 PASS watchdog during encoder polling
 PASS watchdog with partial frame
 PASS Dragger serial bench test
-sss@sss:~/Misc/Arduino/Sketchbook/WheelsROS_Dragger/test$ 
+sergei@sergeiu7:~/Misc/Arduino/Sketchbook/WheelsROS_Dragger/test$ 
+
+ 
 
 """
 def expect(condition, message):
@@ -36,14 +40,14 @@ class Bench:
         self.port = port
         self.expected_charging = expected_charging
 
-    def reply(self):
+    def reply(self, frame):
         raw = self.port.read_until(b"\r", size=128)
-        expect(raw.endswith(b"\r"), f"Incomplete reply: {raw!r}")
+        expect(raw.endswith(b"\r"), f"{frame!r}: incomplete reply: {raw!r}")
         return raw[:-1].decode("ascii")
 
     def request(self, frame, prefix):
         self.port.write(frame + b"\r")
-        reply = self.reply()
+        reply = self.reply(frame)
         expect(reply.startswith(prefix), f"{frame!r}: unexpected reply {reply!r}")
         return reply
 

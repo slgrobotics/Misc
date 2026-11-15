@@ -76,8 +76,15 @@ void respond_OK(char rq_cmd) {
 }
 
 void respond_ERROR(const char *rq_cmd_in) {
-  constexpr int maxCommandLength = SERIAL_TX_BUFFER_SIZE - sizeof("? Error: ''\r");
-  snprintf(out_buf, sizeof(out_buf), "? Error: '%.*s'\r", maxCommandLength, rq_cmd_in);
+  constexpr char prefix[] = "? Error: '";
+  constexpr char suffix[] = "'\r";
+  // AVR printf lacks dynamic precision. Keep the whole reply within the TX ring.
+  constexpr size_t maxDetailLength =
+      SERIAL_TX_BUFFER_SIZE - sizeof(prefix) - sizeof(suffix) + 1;
+  const size_t detailLength = strnlen(rq_cmd_in, maxDetailLength);
+  memcpy(out_buf, prefix, sizeof(prefix) - 1);
+  memcpy(out_buf + sizeof(prefix) - 1, rq_cmd_in, detailLength);
+  memcpy(out_buf + sizeof(prefix) - 1 + detailLength, suffix, sizeof(suffix));
   respond();
 }
 
