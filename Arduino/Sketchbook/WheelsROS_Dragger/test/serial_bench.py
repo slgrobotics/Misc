@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
-"""Exercise the Dragger drive protocol with both wheels off the ground."""
-
-import argparse
-import time
-
-import serial
 
 """
+
+Exercise the Dragger drive protocol with both wheels off the ground.
 
 sss@sss:~/Misc/Arduino/Sketchbook/WheelsROS_Dragger/test$ python3 serial_bench.py --port /dev/ttyACM0
 Battery: 13194 mV, 91 mA, charging=False
@@ -27,9 +23,13 @@ PASS watchdog with partial frame
 PASS Dragger serial bench test
 sergei@sergeiu7:~/Misc/Arduino/Sketchbook/WheelsROS_Dragger/test$ 
 
- 
-
 """
+
+import argparse
+import time
+
+import serial
+
 def expect(condition, message):
     if not condition:
         raise RuntimeError(message)
