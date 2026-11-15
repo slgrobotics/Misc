@@ -1,4 +1,23 @@
-"""Launch Dragger's real hardware with a direct wheel-velocity controller."""
+"""
+
+Launch Dragger's real hardware with a direct wheel-velocity controller.
+
+# Terminal 1:
+ros2 launch ./test/ros2_bench.launch.py
+
+# Terminal 2, once the controllers are active:
+sss@sss:~/Misc/Arduino/Sketchbook/WheelsROS_Dragger$ python3 test/ros2_bench.py
+PASS L=+1.667 R=+0.000 rad/s, encoder delta=[7658, 0]
+PASS L=-1.667 R=+0.000 rad/s, encoder delta=[-7528, 0]
+PASS L=+0.000 R=+1.667 rad/s, encoder delta=[0, 7269]
+PASS L=+0.000 R=-1.667 rad/s, encoder delta=[0, -7577]
+PASS L=+1.667 R=+1.667 rad/s, encoder delta=[7466, 7139]
+PASS L=-1.667 R=-1.667 rad/s, encoder delta=[-7334, -7403]
+PASS L=+1.667 R=-1.667 rad/s, encoder delta=[7484, -7399]
+PASS L=-1.667 R=+1.667 rad/s, encoder delta=[-7413, 7155]
+PASS Dragger ROS 2 wheel bench test
+
+"""
 
 from pathlib import Path
 

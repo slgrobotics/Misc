@@ -2,4 +2,7 @@
 *.bak
 /Arduino/Sketchbook/libraries
 /Arduino/Sketchbook_old
-/Arduino/Sketchbook/WheelsROS_Seggy/test/__pycache__
+__pycache__
+.vscode
+*.pyc
+
